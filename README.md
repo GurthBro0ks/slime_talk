@@ -39,8 +39,9 @@ Standard hosted runners in public repositories are free under
 - No build has been uploaded and no app has been submitted for public distribution.
 - Signing identities and provisioning profiles are not yet created or verified.
 - Owner completed the App Store Connect API access request; access is approved.
-- API signing key is not generated. The prepared CI key has Admin selected only as a draft,
-  pending an explicit decision about account-wide access.
+- Owner explicitly approved an account-wide Admin team API key for CI.
+- Created the named key `slime talk Feasibility CI`. Its private key has not yet been
+  downloaded/transferred into the protected GitHub environment.
 - LiveKit project `slime-talk-feasibility` is created on the free Build plan,
   United States region; next invoice displayed $0.00. Agent observability is disabled.
 - LiveKit project credentials are stored as GitHub Actions secrets and the read-only
@@ -52,10 +53,9 @@ No purchases, paid infrastructure, unrelated capabilities, or production build a
 
 ### Current setup blockers
 
-1. CI signing credentials are pending the owner's permission-scope decision:
-   an account-wide Admin team API key for the automatic cloud-signing attempt,
-   or a lower-privilege upload key with separately managed signing certificates.
-   Apple team API keys cannot be restricted to this one app. No API key has been generated.
+1. The approved Admin CI key is generated. The owner's secure one-time download and
+   transfer to environment secret `ASC_API_KEY_P8` is pending. Do not send the key in chat.
+   The key and issuer IDs are saved as environment variables, not embedded in source.
 2. Signing and PushToTalk provisioning still need verification on an actual signed archive.
 3. Controller hosting endpoint/access and physical-device test coordination remain
    unresolved; the clients and controller have not been implemented.
@@ -94,7 +94,9 @@ GitHub environment `ios-feasibility-signing` is configured with:
 - Only the `main` branch is allowed; no tags.
 - Administrator bypass disabled.
 - Self-review prevention remains off so the sole owner can approve their own triggered build.
-- No environment credentials have been added yet.
+- Non-secret environment variables saved: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`.
+- The `ASC_API_KEY_P8` environment-secret form is prepared with an empty value;
+  the private-key transfer is not yet complete.
 
 Any future signing job must explicitly use this environment. These protections do not
 apply to the existing APNs/LiveKit repository secrets, which are exposed only to their
@@ -105,6 +107,24 @@ Apple documents team-wide key scope in
 [App Store Connect API help](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/).
 The automatic signing path remains an experiment; it has not yet produced a certificate,
 provisioning profile, or signed archive.
+
+### Apple CI credential validation (prepared, not executed)
+
+Workflow: `.github/workflows/asc-credential-check.yml`, commit
+`960c08f4d9fc88a36814b568c287825ee8f28cc5`.
+
+- Manual only, public repository and `main` guards, `ios-feasibility-signing` environment.
+- No repository checkout, dependencies, caches, artifacts, or private-key file writes.
+- Imports the full P8 PEM in memory, checks P-256, and verifies a local ES256 signature.
+- A 120-second JWT is restricted to two GET requests for the exact feasibility
+  App Store Connect app and registered App ID; response bodies and credentials are not logged.
+- No signing/provisioning/account mutations.
+- Local YAML parsing and embedded JavaScript syntax checks: PASS.
+- Actual Apple credential/network check: NOT RUN pending secure key transfer and environment review.
+
+After storing the key, reproduce with **Actions → Apple CI credential check →
+Run workflow → main**, then review and approve the protected environment job.
+This validation does not prove cloud signing or provisioned PushToTalk entitlements.
 
 ### LiveKit credential validation
 
