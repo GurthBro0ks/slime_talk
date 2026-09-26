@@ -56,12 +56,11 @@ No purchases, paid infrastructure, unrelated capabilities, or production build a
 
 ### Current setup blockers
 
-1. Apple CI credential check run `36256889270` is waiting for the owner's review of
-   the protected `ios-feasibility-signing` environment. The key transfer is complete.
-   The private-key value must never be sent in chat or published.
-2. Signing and PushToTalk provisioning still need verification on an actual signed archive.
+1. The protected cloud-signing step in run `36257775576` requires owner environment review.
+   The stored Apple CI credential check and unsigned native compile have passed.
+2. Signing and PushToTalk provisioning still need verification on an exported signed app.
 3. Controller hosting endpoint/access and physical-device test coordination remain
-   unresolved; the clients and controller have not been implemented.
+   unresolved. A signing-only iOS probe exists; PTT clients and controller are not implemented.
 
 ### APNs secret validation
 
@@ -111,7 +110,7 @@ Apple documents team-wide key scope in
 The automatic signing path remains an experiment; it has not yet produced a certificate,
 provisioning profile, or signed archive.
 
-### Apple CI credential validation (waiting for environment review)
+### Apple CI credential validation — PASS
 
 Workflow: `.github/workflows/asc-credential-check.yml`, commit
 `960c08f4d9fc88a36814b568c287825ee8f28cc5`.
@@ -124,8 +123,11 @@ Workflow: `.github/workflows/asc-credential-check.yml`, commit
 - No signing/provisioning/account mutations.
 - Local YAML parsing and embedded JavaScript syntax checks: PASS.
 - Downloaded source-key OpenSSL parsing: PASS.
-- Actual stored-key/Apple API check: NOT RUN; [run 1](https://github.com/GurthBro0ks/slime_talk/actions/runs/36256889270)
-  is waiting for owner environment review at commit `26157d76e6e861c45c4724d0b73bc0da305dd595`.
+- [Run 1](https://github.com/GurthBro0ks/slime_talk/actions/runs/36256889270) passed after owner review
+  at commit `26157d76e6e861c45c4724d0b73bc0da305dd595`.
+- Stored P-256 private-key import and ES256 sign/verify: PASS.
+- Read access to the exact feasibility App Store Connect app and registered App ID: PASS.
+- Secret was masked in Actions logs; no unexpected raw base64 line detected.
 
 Reproduce with **Actions → Apple CI credential check → Run workflow → main**,
 then review and approve the protected environment job.
@@ -145,6 +147,50 @@ passed at commit `024bdc1cd53e6a86cbd57fad77102b3277f5998f`.
 
 Reproduce with **Actions → LiveKit credential check → Run workflow → main**.
 Workflow: `.github/workflows/livekit-credential-check.yml`.
+
+### Native iOS signing prerequisite — unsigned compile PASS
+
+The `ios/` Xcode project is a prerequisite probe with a static explanatory screen.
+It imports the public SwiftUI, PushToTalk, and AVFoundation frameworks and declares
+only the required PushToTalk/APNs entitlements plus the PushToTalk background mode.
+It starts no channel, microphone, audio session, or network connection. It is not a
+PTT candidate and must not be used for F1–F7 acceptance.
+
+[Unsigned archive run 2](https://github.com/GurthBro0ks/slime_talk/actions/runs/36257718911)
+passed at commit `a3ba693b65c053b88293c21618cb3eec3d9714dd` using Xcode 26.3
+and the native arm64 iPhoneOS target. This was not a simulator run.
+
+- Xcode project and plist validation: PASS.
+- Native application archive compilation with signing disabled: PASS.
+- Temporary build products removed; no artifacts uploaded.
+- The first attempt failed before compilation due to an empty-array/`nounset`
+  incompatibility in macOS Bash 3.2; the wrapper was fixed and re-tested.
+
+Local reproduction on a Mac with Xcode 26.3:
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer
+export RUNNER_TEMP="$(mktemp -d)"
+bash ci/archive_probe.sh
+```
+
+Workflow: `.github/workflows/ios-signing-probe.yml`. Pushes compile without credentials.
+Manual dispatch compiles first, then requests the protected environment review for
+a separate signing job. That job rebuilds before receiving the API key, exports
+using Xcode cloud signing, and checks the signed app and embedded profile for:
+
+- exact bundle/team/application identifiers;
+- PushToTalk permitted in both app signature and profile;
+- production APNs in both app signature and profile;
+- non-debug, unexpired App Store beta distribution provisioning;
+- valid application code signature.
+
+[Manual signing run 3](https://github.com/GurthBro0ks/slime_talk/actions/runs/36257775576)
+is prepared at the same source commit. No signing result is claimed yet.
+This authorized signing attempt may create Apple's minimal managed distribution
+certificate/profile resources. It does not upload to TestFlight. Its temporary key,
+raw export log, IPA, and build products are deleted, with no signing artifacts
+uploaded to GitHub. Only fixed verdicts and a successful IPA's SHA-256 may be logged.
 
 ## Frozen PTT behavior
 
