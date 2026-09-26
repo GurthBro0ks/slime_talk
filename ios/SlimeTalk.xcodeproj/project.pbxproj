@@ -1,0 +1,92 @@
+// !$*UTF8*$!
+{
+  archiveVersion = 1;
+  classes = {};
+  objectVersion = 56;
+  objects = {
+    A00000000000000000000001 = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = A00000000000000000000002;
+      buildPhases = (A00000000000000000000003, A00000000000000000000004, A00000000000000000000005);
+      buildRules = ();
+      dependencies = ();
+      name = SlimeTalk;
+      productName = SlimeTalk;
+      productReference = A00000000000000000000006;
+      productType = "com.apple.product-type.application";
+    };
+    A00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000007, A00000000000000000000008); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+    A00000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000009); runOnlyForDeploymentPostprocessing = 0;};
+    A00000000000000000000004 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+    A00000000000000000000005 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+    A00000000000000000000006 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SlimeTalk.app; sourceTree = BUILT_PRODUCTS_DIR;};
+    A00000000000000000000007 = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_ENTITLEMENTS = SlimeTalk/SlimeTalk.entitlements;
+        CODE_SIGN_STYLE = Automatic;
+        CURRENT_PROJECT_VERSION = 1;
+        GENERATE_INFOPLIST_FILE = NO;
+        INFOPLIST_FILE = SlimeTalk/Info.plist;
+        IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+        LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+        MARKETING_VERSION = 0.0.1;
+        PRODUCT_BUNDLE_IDENTIFIER = ai.slimy.slimetalk.feasibility;
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SDKROOT = iphoneos;
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SUPPORTS_MACCATALYST = NO;
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = 1;
+      };
+      name = Debug;
+    };
+    A00000000000000000000008 = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_ENTITLEMENTS = SlimeTalk/SlimeTalk.entitlements;
+        CODE_SIGN_STYLE = Automatic;
+        CURRENT_PROJECT_VERSION = 1;
+        GENERATE_INFOPLIST_FILE = NO;
+        INFOPLIST_FILE = SlimeTalk/Info.plist;
+        IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+        LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+        MARKETING_VERSION = 0.0.1;
+        PRODUCT_BUNDLE_IDENTIFIER = ai.slimy.slimetalk.feasibility;
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SDKROOT = iphoneos;
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SUPPORTS_MACCATALYST = NO;
+        SWIFT_COMPILATION_MODE = wholemodule;
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = 1;
+      };
+      name = Release;
+    };
+    A00000000000000000000009 = {isa = PBXBuildFile; fileRef = A0000000000000000000000A;};
+    A0000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlimeTalkApp.swift; sourceTree = "<group>";};
+    A0000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>";};
+    A0000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SlimeTalk.entitlements; sourceTree = "<group>";};
+    A0000000000000000000000D = {isa = PBXGroup; children = (A0000000000000000000000E, A0000000000000000000000F); sourceTree = "<group>";};
+    A0000000000000000000000E = {isa = PBXGroup; children = (A0000000000000000000000A, A0000000000000000000000B, A0000000000000000000000C); path = SlimeTalk; sourceTree = "<group>";};
+    A0000000000000000000000F = {isa = PBXGroup; children = (A00000000000000000000006); name = Products; sourceTree = "<group>";};
+    A00000000000000000000010 = {
+      isa = PBXProject;
+      attributes = {LastUpgradeCheck = 2630; TargetAttributes = {A00000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; SystemCapabilities = {com.apple.Push = {enabled = 1;}; "com.apple.PushToTalk" = {enabled = 1;}; "com.apple.BackgroundModes" = {enabled = 1;};};};};};
+      buildConfigurationList = A00000000000000000000011;
+      compatibilityVersion = "Xcode 14.0";
+      developmentRegion = en;
+      hasScannedForEncodings = 0;
+      knownRegions = (en, Base);
+      mainGroup = A0000000000000000000000D;
+      productRefGroup = A0000000000000000000000F;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (A00000000000000000000001);
+    };
+    A00000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000012, A00000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+    A00000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; DEBUG_INFORMATION_FORMAT = dwarf;}; name = Debug;};
+    A00000000000000000000013 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SWIFT_OPTIMIZATION_LEVEL = "-O"; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";}; name = Release;};
+  };
+  rootObject = A00000000000000000000010;
+}
