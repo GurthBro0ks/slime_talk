@@ -1,0 +1,63 @@
+name: Feasibility build environment
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: feasibility-build-environment
+  cancel-in-progress: false
+
+jobs:
+  apple-toolchain:
+    # Standard hosted minutes are free for this public repository.
+    # Reassess cost authorization if the repository becomes private.
+    if: ${{ github.event.repository.private == false }}
+    runs-on: macos-15
+    timeout-minutes: 5
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - name: Record macOS and Apple toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$DEVELOPER_DIR"
+          sw_vers
+          uname -m
+          xcodebuild -version
+          xcodebuild -showsdks
+          xcrun swift --version
+          sdk_version="$(xcrun --sdk iphoneos --show-sdk-version)"
+          test "${sdk_version%%.*}" -ge 26
+
+      - name: Type-check public PushToTalk framework imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_path="$RUNNER_TEMP/SlimeTalkFrameworkPreflight.swift"
+          cat > "$source_path" <<'SWIFT'
+          import AVFoundation
+          import PushToTalk
+          let managerType: PTChannelManager.Type = PTChannelManager.self
+          let sessionType: AVAudioSession.Type = AVAudioSession.self
+          SWIFT
+          sdk_path="$(xcrun --sdk iphoneos --show-sdk-path)"
+          xcrun --sdk iphoneos swiftc -typecheck \
+            -sdk "$sdk_path" \
+            -target arm64-apple-ios16.0 \
+            "$source_path"
+
+      - name: Record limited result
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## Build-environment preflight
+          - WORK_ORDER: SLIME_TALK_FEASIBILITY_002 (continuation of 001)
+          - Apple toolchain and public framework type-check: PASS
+          - App signing, provisioning, APNs, LiveKit: NOT TESTED
+          - TestFlight upload/install: NOT TESTED
+          - Physical-device F1-F7: NOT TESTED
+          - No application was built, signed, installed, or accepted.
+          SUMMARY
