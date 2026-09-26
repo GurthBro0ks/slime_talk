@@ -37,7 +37,9 @@ Standard hosted runners in public repositories are free under
   Apple app ID `6816454718`, bundle `ai.slimy.slimetalk.feasibility`,
   SKU `slime-talk-feasibility-001`, primary language English (U.S.).
 - No build has been uploaded and no app has been submitted for public distribution.
-- Signing identities and provisioning profiles are not yet created or verified.
+- The hosted export created an Apple Distribution Managed certificate (portal verified,
+  expiry 2027-09-26). Export and application signature integrity checks completed,
+  but required PushToTalk entitlement verification failed. Provisioning is NOT accepted.
 - Owner completed the App Store Connect API access request; access is approved.
 - Owner explicitly approved an account-wide Admin team API key for CI.
 - Created the named key `slime talk Feasibility CI` and stored its complete private-key PEM
@@ -56,9 +58,13 @@ No purchases, paid infrastructure, unrelated capabilities, or production build a
 
 ### Current setup blockers
 
-1. The protected cloud-signing step in run `36257775576` requires owner environment review.
-   The stored Apple CI credential check and unsigned native compile have passed.
-2. Signing and PushToTalk provisioning still need verification on an exported signed app.
+1. **STOP CONDITION:** run `36257775576` was approved by the owner and failed the
+   required PushToTalk entitlement check after producing an exported signed app.
+   No signing retry, capability change, or provisioning workaround has been made.
+2. The current fixed diagnostic does not distinguish the app-signature entitlement
+   from the embedded-profile entitlement. The unsigned-archive-to-distribution export
+   path may have dropped the requested entitlement; this is an unproven hypothesis,
+   not evidence that Apple's PushToTalk provisioning is unavailable.
 3. Controller hosting endpoint/access and physical-device test coordination remain
    unresolved. A signing-only iOS probe exists; PTT clients and controller are not implemented.
 
@@ -107,8 +113,9 @@ checkout-dependent scripts, logs, caches, or downloadable artifacts.
 
 Apple documents team-wide key scope in
 [App Store Connect API help](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/).
-The automatic signing path remains an experiment; it has not yet produced a certificate,
-provisioning profile, or signed archive.
+The automatic signing path remains an experiment. It produced a managed distribution
+certificate and an exported signed app, but the required PushToTalk entitlement check
+failed. Successful signing alone does not satisfy the provisioning or physical-device gates.
 
 ### Apple CI credential validation — PASS
 
@@ -148,7 +155,7 @@ passed at commit `024bdc1cd53e6a86cbd57fad77102b3277f5998f`.
 Reproduce with **Actions → LiveKit credential check → Run workflow → main**.
 Workflow: `.github/workflows/livekit-credential-check.yml`.
 
-### Native iOS signing prerequisite — unsigned compile PASS
+### Native iOS signing prerequisite — compile PASS; entitlement check BLOCKED
 
 The `ios/` Xcode project is a prerequisite probe with a static explanatory screen.
 It imports the public SwiftUI, PushToTalk, and AVFoundation frameworks and declares
@@ -186,11 +193,30 @@ using Xcode cloud signing, and checks the signed app and embedded profile for:
 - valid application code signature.
 
 [Manual signing run 3](https://github.com/GurthBro0ks/slime_talk/actions/runs/36257775576)
-is prepared at the same source commit. No signing result is claimed yet.
-This authorized signing attempt may create Apple's minimal managed distribution
-certificate/profile resources. It does not upload to TestFlight. Its temporary key,
-raw export log, IPA, and build products are deleted, with no signing artifacts
-uploaded to GitHub. Only fixed verdicts and a successful IPA's SHA-256 may be logged.
+ran at the same source commit after owner environment approval.
+
+- Both unsigned compile jobs passed.
+- Xcode export returned success and exactly one IPA was found.
+- Exported application signature integrity verification passed; signed entitlements
+  and the embedded profile decoded successfully. These observations follow from
+  reaching the subsequent failing assertion in the committed verifier.
+- Bundle ID and PushToTalk background-mode check passed.
+- **FAIL:** `PushToTalk entitlement is missing or not permitted; stop for provisioning review.`
+- The assertion checks the signed app and profile in sequence using the same message.
+  The log does not identify which failed. Later APNs/distribution checks were not completed.
+- A read-only portal refresh confirmed Push to Talk and Push Notifications remain enabled.
+- The Certificates page shows an API-created Distribution Managed certificate,
+  expiry 2027-09-26. The normal Profiles list shows no entries; that observation
+  does not establish the absence of Xcode-managed provisioning.
+- Temporary key, raw export log, IPA, and build products were removed. No signing
+  artifacts or credentials were uploaded to GitHub; no TestFlight upload occurred.
+- The API key was masked in Actions logs; no unexpected raw base64 line was detected.
+
+Engineering stopped under the owner's provisioning stop condition. Recommend a
+Canonical PM-authorized diagnostic repair that separately reports entitlement presence
+in the signed app and profile and investigates entitlement preservation in the
+unsigned archive/export path. Do not bypass the checks or remove required entitlements.
+This result does not establish Apple/LiveKit architectural incompatibility.
 
 ## Frozen PTT behavior
 
@@ -214,8 +240,12 @@ All required tests are NOT TESTED:
 - F7: three-second silence releases ownership and requires release plus fresh press.
 
 [LiveKit Swift issue 1069](https://github.com/livekit/client-sdk-swift/issues/1069)
-was open at inspection. It is a reported receive-only integration issue, not proof
-that this candidate will fail. Activating the microphone first is not an acceptable workaround.
+remains open at this inspection. The reporter clarified that their integration uses
+custom PTT rather than Apple's PTChannelManager or CallKit. A maintainer reported
+successful receive-only playback in the Swift example and requested the integration
+conditions. Reports that recording-always-prepared mode masks the issue are not an
+acceptable feasibility workaround. F4 must still be measured with no prior mic activation.
+These upstream reports do not prove this candidate will pass or fail.
 
 ## Evidence boundaries
 
