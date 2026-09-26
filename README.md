@@ -30,8 +30,12 @@ Standard hosted runners in public repositories are free under
 - No separate capability approval was requested during ordinary registration.
 - One APNs key registered with only APNs service enabled, Production environment,
   and a topic restriction to the feasibility App ID.
-- The private APNs key has NOT been downloaded. Secure storage transfer is pending.
-- GitHub Actions secrets settings are accessible; no credential has been saved yet.
+- Owner downloaded the APNs key and saved repository secret `APNS_AUTH_KEY_P8`.
+- GitHub confirms the secret exists. Its value is not readable through the settings UI.
+- Non-disclosing format validation FAILED: the stored value did not contain exactly
+  one complete expected `PRIVATE KEY` PEM block. The credential was not printed or modified.
+- App Store Connect requires acceptance of its Terms of Service before further setup.
+  The agreement has not been accepted by Engineering.
 - Signing identity, signed profile entitlements, App Store Connect app/upload access,
   TestFlight install, LiveKit development project, controller endpoint, and physical
   device test coordination remain unresolved.
@@ -40,17 +44,29 @@ The owner authorized only the minimum feasibility App ID/capabilities, signing,
 provisioning, APNs, free LiveKit project, hosted signed builds, and TestFlight path.
 No purchases, paid infrastructure, unrelated capabilities, or production build are authorized.
 
-### Immediate setup blocker
+### Immediate setup blockers
 
-The connected GitHub API tools cannot write Actions secrets. The browser can access
-the secret-entry form, but the available supported tools do not provide a verified
-private-file-to-secret transfer that keeps the credential out of tool arguments and
-transcripts. An owner transfer is required before downloading the one-time APNs key.
+1. The owner must review the App Store Connect Terms of Service. No agreement has
+   been accepted on the owner's behalf, and signing/TestFlight setup is paused.
+2. The owner must replace `APNS_AUTH_KEY_P8` with the original Apple-downloaded P8
+   text, including the BEGIN/END PRIVATE KEY lines and real line breaks. Do not
+   paste credentials into chat. Retain a secure backup.
 
-The prepared destination is the repository Actions secret `APNS_AUTH_KEY_P8`.
-Store the complete downloaded P8 content there and retain a secure backup; never
-paste it into chat, commit it, or upload it as a workflow artifact. Do not provide
-this runtime credential to build jobs that do not need it.
+[APNs credential validation run 2](https://github.com/GurthBro0ks/slime_talk/actions/runs/36253714786)
+at commit `8ad83dce14cadacd442020859e0b97b19f0d3d92`:
+
+- Six synthetic parser/signing checks: PASS.
+- Real stored secret: FAIL before cryptographic parsing; expected one complete PEM block.
+- No network calls with the key, repository checkout, dependencies, caches, or artifact uploads.
+- Validator uses fixed result messages; temporary source and executable removed.
+- GitHub masked the secret environment value in logs.
+- This check does not prove the private key matches the registered Apple key ID or
+  that APNs will authorize a push.
+
+Workflow: `.github/workflows/apns-credential-check.yml`. After correcting the secret,
+run **APNs credential format check** manually on `main`. The full original P8 text is
+the expected format; trimming the PEM boundary lines is incorrect. Runtime credentials
+must not be made available to unrelated build steps.
 
 Key registration and portal capability checks do not prove APNs delivery or signed
 entitlements. The production `.voip-ptt` push must still be tested with a real
