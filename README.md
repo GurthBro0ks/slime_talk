@@ -27,50 +27,59 @@ Standard hosted runners in public repositories are free under
 - Apple Developer membership and portal access verified.
 - Explicit feasibility App ID `ai.slimy.slimetalk.feasibility` registered under owner authorization.
 - Push to Talk and Push Notifications are enabled in the saved App ID.
-- No separate capability approval was requested during ordinary registration.
+- No separate PushToTalk capability approval was requested during ordinary registration.
 - One APNs key registered with only APNs service enabled, Production environment,
   and a topic restriction to the feasibility App ID.
-- Owner downloaded the APNs key and saved repository secret `APNS_AUTH_KEY_P8`.
-- GitHub confirms the secret exists. Its value is not readable through the settings UI.
-- Non-disclosing format validation FAILED: the stored value did not contain exactly
-  one complete expected `PRIVATE KEY` PEM block. The credential was not printed or modified.
-- App Store Connect requires acceptance of its Terms of Service before further setup.
-  The agreement has not been accepted by Engineering.
-- Signing identity, signed profile entitlements, App Store Connect app/upload access,
-  TestFlight install, LiveKit development project, controller endpoint, and physical
-  device test coordination remain unresolved.
+- Owner saved and corrected repository secret `APNS_AUTH_KEY_P8`.
+- Stored credential format and local signing check: PASS; no wrapper text remains.
+- Owner accepted App Store Connect Terms of Service; authenticated Apps access verified.
+- Created iOS-only App Store Connect record **slime talk Feasibility**:
+  Apple app ID `6816454718`, bundle `ai.slimy.slimetalk.feasibility`,
+  SKU `slime-talk-feasibility-001`, primary language English (U.S.).
+- No build has been uploaded and no app has been submitted for public distribution.
+- Signing identities and provisioning profiles are not yet created or verified.
+- LiveKit is at the sign-in/registration page; no project or billing setup has been created.
 
 The owner authorized only the minimum feasibility App ID/capabilities, signing,
 provisioning, APNs, free LiveKit project, hosted signed builds, and TestFlight path.
 No purchases, paid infrastructure, unrelated capabilities, or production build are authorized.
 
-### Immediate setup blockers
+### Current setup blockers
 
-1. The owner must review the App Store Connect Terms of Service. No agreement has
-   been accepted on the owner's behalf, and signing/TestFlight setup is paused.
-2. The owner must replace `APNS_AUTH_KEY_P8` with the original Apple-downloaded P8
-   text, including the BEGIN/END PRIVATE KEY lines and real line breaks. Do not
-   paste credentials into chat. Retain a secure backup.
+1. App Store Connect API access is not enabled. The Account Holder must review
+   Apple's separate internal-use agreement and submit the access request before
+   CI credentials can be created. The request dialog is prepared but NOT submitted.
+   Engineering stopped at the owner's explicit approval/decision boundary.
+2. LiveKit requires owner sign-in or registration (including any signup terms).
+   Only the authorized free Build project is permitted.
+3. Controller hosting endpoint/access and physical-device test coordination remain
+   unresolved; the prototype has not been implemented.
 
-[APNs credential validation run 2](https://github.com/GurthBro0ks/slime_talk/actions/runs/36253714786)
-at commit `8ad83dce14cadacd442020859e0b97b19f0d3d92`:
+### APNs secret validation
+
+[APNs credential validation run 3](https://github.com/GurthBro0ks/slime_talk/actions/runs/36254114573)
+at commit `79eaf47ba69ca4a38277c9d5f7669bdda4765e1a` passed after the owner corrected
+the saved secret:
 
 - Six synthetic parser/signing checks: PASS.
-- Real stored secret: FAIL before cryptographic parsing; expected one complete PEM block.
-- No network calls with the key, repository checkout, dependencies, caches, or artifact uploads.
-- Validator uses fixed result messages; temporary source and executable removed.
-- GitHub masked the secret environment value in logs.
-- This check does not prove the private key matches the registered Apple key ID or
-  that APNs will authorize a push.
+- OpenSSL P-256 PEM parsing: PASS.
+- Apple CryptoKit private-key import and local sign/verify: PASS.
+- No extra wrapper text; only line-ending/outer-whitespace normalization.
+- Secret environment value masked in logs; no unexpected raw base64 output detected.
+- No key-bearing network calls, repository checkout, dependencies, caches, or artifact uploads.
+- Temporary validator source and executable removed.
 
-Workflow: `.github/workflows/apns-credential-check.yml`. After correcting the secret,
-run **APNs credential format check** manually on `main`. The full original P8 text is
-the expected format; trimming the PEM boundary lines is incorrect. Runtime credentials
-must not be made available to unrelated build steps.
+Earlier runs failed at PEM boundary validation and are retained as historical evidence.
+No key value was printed or modified by Engineering. The complete original P8 text,
+including its BEGIN/END PRIVATE KEY lines, is the correct stored format.
 
-Key registration and portal capability checks do not prove APNs delivery or signed
-entitlements. The production `.voip-ptt` push must still be tested with a real
-PushToTalk channel token from the TestFlight candidate.
+Workflow: `.github/workflows/apns-credential-check.yml`. Reproduce with
+**Actions → APNs credential format check → Run workflow → main**.
+
+These checks do NOT prove key identity, APNs authorization/delivery, or signed app
+entitlements. A production `.voip-ptt` push still needs a real PushToTalk channel
+token from the TestFlight candidate. Runtime credentials must not be supplied to
+unrelated build steps.
 
 ## Frozen PTT behavior
 
