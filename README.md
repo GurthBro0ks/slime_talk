@@ -38,7 +38,13 @@ Standard hosted runners in public repositories are free under
   SKU `slime-talk-feasibility-001`, primary language English (U.S.).
 - No build has been uploaded and no app has been submitted for public distribution.
 - Signing identities and provisioning profiles are not yet created or verified.
-- LiveKit is at the sign-in/registration page; no project or billing setup has been created.
+- Owner completed the App Store Connect API access request; access is approved.
+- API signing key is not generated. The prepared CI key has Admin selected only as a draft,
+  pending an explicit decision about account-wide access.
+- LiveKit project `slime-talk-feasibility` is created on the free Build plan,
+  United States region; next invoice displayed $0.00. Agent observability is disabled.
+- LiveKit project credentials are stored as GitHub Actions secrets and the read-only
+  API access check passed. No media room, agent, recording, or paid resource was created.
 
 The owner authorized only the minimum feasibility App ID/capabilities, signing,
 provisioning, APNs, free LiveKit project, hosted signed builds, and TestFlight path.
@@ -46,14 +52,13 @@ No purchases, paid infrastructure, unrelated capabilities, or production build a
 
 ### Current setup blockers
 
-1. App Store Connect API access is not enabled. The Account Holder must review
-   Apple's separate internal-use agreement and submit the access request before
-   CI credentials can be created. The request dialog is prepared but NOT submitted.
-   Engineering stopped at the owner's explicit approval/decision boundary.
-2. LiveKit requires owner sign-in or registration (including any signup terms).
-   Only the authorized free Build project is permitted.
+1. CI signing credentials are pending the owner's permission-scope decision:
+   an account-wide Admin team API key for the automatic cloud-signing attempt,
+   or a lower-privilege upload key with separately managed signing certificates.
+   Apple team API keys cannot be restricted to this one app. No API key has been generated.
+2. Signing and PushToTalk provisioning still need verification on an actual signed archive.
 3. Controller hosting endpoint/access and physical-device test coordination remain
-   unresolved; the prototype has not been implemented.
+   unresolved; the clients and controller have not been implemented.
 
 ### APNs secret validation
 
@@ -80,6 +85,41 @@ These checks do NOT prove key identity, APNs authorization/delivery, or signed a
 entitlements. A production `.voip-ptt` push still needs a real PushToTalk channel
 token from the TestFlight candidate. Runtime credentials must not be supplied to
 unrelated build steps.
+
+### Protected CI credential destination
+
+GitHub environment `ios-feasibility-signing` is configured with:
+
+- Required reviewer: repository owner `GurthBro0ks`.
+- Only the `main` branch is allowed; no tags.
+- Administrator bypass disabled.
+- Self-review prevention remains off so the sole owner can approve their own triggered build.
+- No environment credentials have been added yet.
+
+Any future signing job must explicitly use this environment. These protections do not
+apply to the existing APNs/LiveKit repository secrets, which are exposed only to their
+dedicated validation steps. Credential values must never enter application source,
+checkout-dependent scripts, logs, caches, or downloadable artifacts.
+
+Apple documents team-wide key scope in
+[App Store Connect API help](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/).
+The automatic signing path remains an experiment; it has not yet produced a certificate,
+provisioning profile, or signed archive.
+
+### LiveKit credential validation
+
+[LiveKit credential validation run 1](https://github.com/GurthBro0ks/slime_talk/actions/runs/36254826920)
+passed at commit `024bdc1cd53e6a86cbd57fad77102b3277f5998f`.
+
+- Stored `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` authenticated
+  a read-only `RoomService/ListRooms` request: PASS.
+- JWT limited to `roomList`, valid for 60 seconds; response data and credential values not logged.
+- API key and secret masked in job logs; no unexpected raw base64 line detected.
+- No checkout, third-party dependencies, artifacts, caches, or resource creation.
+- Media transport, controller authorization, and F1–F7 remain NOT TESTED.
+
+Reproduce with **Actions → LiveKit credential check → Run workflow → main**.
+Workflow: `.github/workflows/livekit-credential-check.yml`.
 
 ## Frozen PTT behavior
 
