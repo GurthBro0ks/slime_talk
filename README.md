@@ -40,8 +40,11 @@ Standard hosted runners in public repositories are free under
 - Signing identities and provisioning profiles are not yet created or verified.
 - Owner completed the App Store Connect API access request; access is approved.
 - Owner explicitly approved an account-wide Admin team API key for CI.
-- Created the named key `slime talk Feasibility CI`. Its private key has not yet been
-  downloaded/transferred into the protected GitHub environment.
+- Created the named key `slime talk Feasibility CI` and stored its complete private-key PEM
+  as `ASC_API_KEY_P8` in the protected GitHub environment. GitHub storage was verified.
+- The owner downloaded the P8 in the cloud browser; Engineering transferred it directly
+  from the shared download into the secret field without displaying the value.
+  Local OpenSSL parsing passed; the temporary downloaded file was then removed.
 - LiveKit project `slime-talk-feasibility` is created on the free Build plan,
   United States region; next invoice displayed $0.00. Agent observability is disabled.
 - LiveKit project credentials are stored as GitHub Actions secrets and the read-only
@@ -53,9 +56,9 @@ No purchases, paid infrastructure, unrelated capabilities, or production build a
 
 ### Current setup blockers
 
-1. The approved Admin CI key is generated. The owner's secure one-time download and
-   transfer to environment secret `ASC_API_KEY_P8` is pending. Do not send the key in chat.
-   The key and issuer IDs are saved as environment variables, not embedded in source.
+1. Apple CI credential check run `36256889270` is waiting for the owner's review of
+   the protected `ios-feasibility-signing` environment. The key transfer is complete.
+   The private-key value must never be sent in chat or published.
 2. Signing and PushToTalk provisioning still need verification on an actual signed archive.
 3. Controller hosting endpoint/access and physical-device test coordination remain
    unresolved; the clients and controller have not been implemented.
@@ -95,8 +98,8 @@ GitHub environment `ios-feasibility-signing` is configured with:
 - Administrator bypass disabled.
 - Self-review prevention remains off so the sole owner can approve their own triggered build.
 - Non-secret environment variables saved: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`.
-- The `ASC_API_KEY_P8` environment-secret form is prepared with an empty value;
-  the private-key transfer is not yet complete.
+- Environment secret `ASC_API_KEY_P8` is stored. Its value was not printed, committed,
+  or added to any report, screenshot, or artifact.
 
 Any future signing job must explicitly use this environment. These protections do not
 apply to the existing APNs/LiveKit repository secrets, which are exposed only to their
@@ -108,7 +111,7 @@ Apple documents team-wide key scope in
 The automatic signing path remains an experiment; it has not yet produced a certificate,
 provisioning profile, or signed archive.
 
-### Apple CI credential validation (prepared, not executed)
+### Apple CI credential validation (waiting for environment review)
 
 Workflow: `.github/workflows/asc-credential-check.yml`, commit
 `960c08f4d9fc88a36814b568c287825ee8f28cc5`.
@@ -120,10 +123,12 @@ Workflow: `.github/workflows/asc-credential-check.yml`, commit
   App Store Connect app and registered App ID; response bodies and credentials are not logged.
 - No signing/provisioning/account mutations.
 - Local YAML parsing and embedded JavaScript syntax checks: PASS.
-- Actual Apple credential/network check: NOT RUN pending secure key transfer and environment review.
+- Downloaded source-key OpenSSL parsing: PASS.
+- Actual stored-key/Apple API check: NOT RUN; [run 1](https://github.com/GurthBro0ks/slime_talk/actions/runs/36256889270)
+  is waiting for owner environment review at commit `26157d76e6e861c45c4724d0b73bc0da305dd595`.
 
-After storing the key, reproduce with **Actions → Apple CI credential check →
-Run workflow → main**, then review and approve the protected environment job.
+Reproduce with **Actions → Apple CI credential check → Run workflow → main**,
+then review and approve the protected environment job.
 This validation does not prove cloud signing or provisioned PushToTalk entitlements.
 
 ### LiveKit credential validation
