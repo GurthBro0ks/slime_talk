@@ -1,0 +1,197 @@
+name: iOS signing and entitlement probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'ci/archive_probe.sh'
+      - '.github/workflows/ios-signing-probe.yml'
+
+permissions: {}
+
+concurrency:
+  group: ios-signing-probe
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+
+jobs:
+  compile:
+    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/main' }}
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - name: Fetch exact public source without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin https://github.com/GurthBro0ks/slime_talk.git
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Compile native unsigned signing probe
+        shell: bash
+        run: bash ci/archive_probe.sh
+      - name: Remove temporary build products
+        if: always()
+        shell: bash
+        run: rm -rf -- "$RUNNER_TEMP/slime-talk-signing-probe"
+
+  sign-and-verify:
+    needs: compile
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    environment: ios-feasibility-signing
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Fetch exact public source without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin https://github.com/GurthBro0ks/slime_talk.git
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Build archive before supplying any private key
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: bash ci/archive_probe.sh
+      - name: Export with cloud signing and verify actual entitlements
+        shell: bash
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          ulimit -c 0
+          python3 -I - <<'PY'
+          import datetime, hashlib, os, pathlib, plistlib, re, subprocess, tempfile, zipfile
+
+          def stop(message):
+              print('FAIL: ' + message, flush=True)
+              raise SystemExit(1)
+
+          def checked(command, message):
+              result = subprocess.run(command, capture_output=True)
+              if result.returncode:
+                  stop(message)
+              return result.stdout
+
+          try:
+              team = os.environ['APPLE_TEAM_ID']
+              key_id = os.environ['ASC_KEY_ID']
+              issuer = os.environ['ASC_ISSUER_ID']
+              pem = os.environ.pop('ASC_API_KEY_P8')
+              if not re.fullmatch(r'[A-Z0-9]{10}', team) or not re.fullmatch(r'[A-Z0-9]{10}', key_id):
+                  stop('Invalid signing identifier format.')
+              if not re.fullmatch(r'[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}', issuer):
+                  stop('Invalid issuer identifier format.')
+              if not pem.strip().startswith('-----BEGIN PRIVATE KEY-----'):
+                  stop('Private-key format is invalid.')
+              probe = pathlib.Path(os.environ['RUNNER_TEMP']) / 'slime-talk-signing-probe'
+              archive = probe / 'SlimeTalk.xcarchive'
+              with tempfile.TemporaryDirectory(prefix='apple-signing-', dir=probe) as private_dir:
+                  private = pathlib.Path(private_dir)
+                  key_path = private / 'AuthKey.p8'
+                  key_path.write_text(pem.strip() + '\n')
+                  del pem
+                  options = private / 'ExportOptions.plist'
+                  options.write_bytes(plistlib.dumps({
+                      'method': 'app-store-connect', 'destination': 'export',
+                      'signingStyle': 'automatic', 'teamID': team,
+                      'manageAppVersionAndBuildNumber': False, 'uploadSymbols': False,
+                  }))
+                  export = private / 'export'
+                  # Raw Xcode distribution output stays private and is never uploaded.
+                  log_path = private / 'export.log'
+                  with log_path.open('wb') as log:
+                      result = subprocess.run([
+                          'xcodebuild', '-exportArchive', '-archivePath', str(archive),
+                          '-exportPath', str(export), '-exportOptionsPlist', str(options),
+                          '-allowProvisioningUpdates', '-authenticationKeyPath', str(key_path),
+                          '-authenticationKeyID', key_id, '-authenticationKeyIssuerID', issuer,
+                      ], stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                  key_path.unlink()
+                  if result.returncode:
+                      diagnostic = log_path.read_text(errors='replace').lower()
+                      for needle, label in [
+                          ('cloud signing permission', 'Cloud signing permission was rejected.'),
+                          ('no signing certificate', 'Xcode reports no usable signing certificate.'),
+                          ('no profiles for', 'Xcode reports no matching provisioning profile.'),
+                          ('does not support', 'Xcode reports an unsupported capability or configuration.'),
+                          ('doesn\'t support', 'Xcode reports an unsupported capability or configuration.'),
+                          ('no accounts', 'Xcode reports that account access is unavailable.'),
+                          ('not permitted', 'Apple rejected a requested signing operation.'),
+                          ('requires a provisioning profile', 'A provisioning profile is required.'),
+                      ]:
+                          if needle in diagnostic:
+                              print('DIAGNOSTIC: ' + label, flush=True)
+                      stop('Cloud export failed; raw distribution logs and credentials are suppressed.')
+                  ipas = list(export.glob('*.ipa'))
+                  if len(ipas) != 1:
+                      stop('Expected exactly one exported IPA.')
+                  extracted = private / 'unpacked'
+                  with zipfile.ZipFile(ipas[0]) as package:
+                      for name in package.namelist():
+                          path = pathlib.PurePosixPath(name)
+                          if path.is_absolute() or '..' in path.parts:
+                              stop('Unexpected package path.')
+                      package.extractall(extracted)
+                  app = extracted / 'Payload' / 'SlimeTalk.app'
+                  checked(['codesign', '--verify', '--deep', '--strict', str(app)],
+                          'Exported application signature verification failed.')
+                  signed = plistlib.loads(checked(['codesign', '-d', '--entitlements', ':-', str(app)],
+                          'Cannot read signed application entitlements.'))
+                  profile = plistlib.loads(checked(['security', 'cms', '-D', '-i', str(app / 'embedded.mobileprovision')],
+                          'Cannot decode the embedded provisioning profile.'))
+                  info = plistlib.loads((app / 'Info.plist').read_bytes())
+                  bundle = 'ai.slimy.slimetalk.feasibility'
+                  if info.get('CFBundleIdentifier') != bundle or info.get('UIBackgroundModes') != ['push-to-talk']:
+                      stop('Unexpected bundle ID or background modes.')
+                  for entitlements in (signed, profile.get('Entitlements', {})):
+                      if entitlements.get('com.apple.developer.push-to-talk') is not True:
+                          stop('PushToTalk entitlement is missing or not permitted; stop for provisioning review.')
+                      if entitlements.get('aps-environment') != 'production':
+                          stop('Production APNs entitlement is missing; stop for provisioning review.')
+                      if entitlements.get('application-identifier') != team + '.' + bundle:
+                          stop('Unexpected signed application identifier.')
+                      if entitlements.get('com.apple.developer.team-identifier') != team:
+                          stop('Unexpected signing team.')
+                      if entitlements.get('get-task-allow', False) is not False:
+                          stop('Unexpected debug entitlement in distribution output.')
+                  if profile.get('ProvisionedDevices') or profile.get('ProvisionsAllDevices'):
+                      stop('Export is not an App Store distribution profile.')
+                  if profile.get('Entitlements', {}).get('beta-reports-active') is not True:
+                      stop('Profile does not indicate App Store beta distribution.')
+                  expiry = profile.get('ExpirationDate')
+                  if not isinstance(expiry, datetime.datetime) or expiry <= datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None):
+                      stop('Provisioning profile is expired or has no valid expiration.')
+                  print('PASS: exported distribution application signature verifies.')
+                  print('PASS: signed app and profile both permit PushToTalk and production APNs for the exact feasibility App ID.')
+                  print('PASS: non-debug App Store distribution profile is current.')
+                  print('IPA_SHA256=' + hashlib.sha256(ipas[0].read_bytes()).hexdigest())
+                  print('No TestFlight upload, simulator result, or physical-device test. F1-F7 are NOT TESTED.')
+          except SystemExit:
+              raise
+          except subprocess.TimeoutExpired:
+              stop('Cloud export timed out; details suppressed.')
+          except Exception:
+              stop('Signing verification did not complete; sensitive error details suppressed.')
+          PY
+      - name: Remove temporary private files and build products
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "$RUNNER_TEMP/slime-talk-signing-probe"
+          echo 'Cleanup complete; no signing files, archives, or IPA artifacts uploaded.'
