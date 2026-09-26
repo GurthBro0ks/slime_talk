@@ -4,10 +4,9 @@ set -euo pipefail
 set +x
 probe_dir="${RUNNER_TEMP:?}/slime-talk-signing-probe"
 mkdir -p "$probe_dir"
-team_args=()
+team_args=("DEVELOPMENT_TEAM=${APPLE_TEAM_ID:-}")
 if [[ -n "${APPLE_TEAM_ID:-}" ]]; then
   [[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]] || exit 1
-  team_args+=("DEVELOPMENT_TEAM=$APPLE_TEAM_ID")
 fi
 [[ "${GITHUB_RUN_NUMBER:-1}" =~ ^[0-9]+$ ]] || exit 1
 plutil -lint ios/SlimeTalk.xcodeproj/project.pbxproj ios/SlimeTalk/Info.plist ios/SlimeTalk/SlimeTalk.entitlements
