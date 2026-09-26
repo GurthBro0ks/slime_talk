@@ -22,18 +22,39 @@ It skips its job if the repository is private; revisit cost authorization before
 Standard hosted runners in public repositories are free under
 [GitHub's documented billing rules](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
 
-## Remaining preflight
+## Preflight status — 2026-09-26
 
 - Apple Developer membership and portal access verified.
-- Push to Talk and Push Notifications selectable in the App ID registration form.
-- Proposed explicit Bundle ID: `ai.slimy.slimetalk.feasibility`.
-- App ID draft reached confirmation; registration not submitted.
-- APNs key inventory and provisioning-profile inventory empty at inspection.
+- Explicit feasibility App ID `ai.slimy.slimetalk.feasibility` registered under owner authorization.
+- Push to Talk and Push Notifications are enabled in the saved App ID.
+- No separate capability approval was requested during ordinary registration.
+- One APNs key registered with only APNs service enabled, Production environment,
+  and a topic restriction to the feasibility App ID.
+- The private APNs key has NOT been downloaded. Secure storage transfer is pending.
+- GitHub Actions secrets settings are accessible; no credential has been saved yet.
 - Signing identity, signed profile entitlements, App Store Connect app/upload access,
   TestFlight install, LiveKit development project, controller endpoint, and physical
   device test coordination remain unresolved.
 
-No Apple account settings may be changed without the owner's authorization.
+The owner authorized only the minimum feasibility App ID/capabilities, signing,
+provisioning, APNs, free LiveKit project, hosted signed builds, and TestFlight path.
+No purchases, paid infrastructure, unrelated capabilities, or production build are authorized.
+
+### Immediate setup blocker
+
+The connected GitHub API tools cannot write Actions secrets. The browser can access
+the secret-entry form, but the available supported tools do not provide a verified
+private-file-to-secret transfer that keeps the credential out of tool arguments and
+transcripts. An owner transfer is required before downloading the one-time APNs key.
+
+The prepared destination is the repository Actions secret `APNS_AUTH_KEY_P8`.
+Store the complete downloaded P8 content there and retain a secure backup; never
+paste it into chat, commit it, or upload it as a workflow artifact. Do not provide
+this runtime credential to build jobs that do not need it.
+
+Key registration and portal capability checks do not prove APNs delivery or signed
+entitlements. The production `.voip-ptt` push must still be tested with a real
+PushToTalk channel token from the TestFlight candidate.
 
 ## Frozen PTT behavior
 
