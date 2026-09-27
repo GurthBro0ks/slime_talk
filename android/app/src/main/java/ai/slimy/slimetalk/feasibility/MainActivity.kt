@@ -16,7 +16,7 @@ import io.livekit.android.events.RoomEvent
 import io.livekit.android.room.Room
 import io.livekit.android.room.track.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import io.livekit.android.events.collect
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
