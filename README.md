@@ -18,7 +18,7 @@ Runtime source commit: `c16987116823f5f96fd7e09e2f0b02efc2c20dfc`.
   commits change only iOS.
 - iOS runtime native compilation and Swift safety checks passed on the exact
   candidate in [run 15](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334295883).
-  The same source is queued in
+  The same source passed compile/safety checks and awaits owner environment review in
   [protected runtime signing/upload run 16](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334625784).
   Same-candidate distribution verification and TestFlight processing are pending.
   Earlier signing PASS below applies only to the prerequisite probe.
