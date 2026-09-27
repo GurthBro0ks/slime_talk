@@ -1,9 +1,50 @@
 # slime_talk — experimental feasibility only
 
-Phase 0, Gate 0C. Active work order: SLIME_TALK_SIGNING_DIAGNOSTIC_001.
-Focused signing/provisioning diagnosis and minimal local repair only. The physical
-feasibility requirements of SLIME_TALK_FEASIBILITY_001 remain unchanged.
-Production implementation and architecture freeze are not authorized.
+Phase 0, Gate 0C. Active work order: **SLIME_TALK_FEASIBILITY_003**.
+A minimal runtime feasibility candidate is authorized. Production V1 and
+architecture acceptance remain unauthorized.
+
+## Runtime candidate — PARTIAL — 2026-09-27
+
+Native Swift/Apple PushToTalk/LiveKit and Kotlin/LiveKit clients plus a Node
+authoritative controller are implemented. No physical F1–F7 result is claimed.
+Runtime source commit: `c16987116823f5f96fd7e09e2f0b02efc2c20dfc`.
+
+- Android version 0.1.0, build 4: APK and four PTT unit tests passed in
+  [runtime checks](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334126880).
+  Artifact: `slime-talk-feasibility-apk` (7-day retention).
+  APK SHA-256: `7a3d3b9b6a2e6f836fec73e7584ff178a824dcf26add76ca5fd99a151dbce065`.
+  APK source: `d6cfe4c8cdb0dc5b5137506dc9889d767e2d8518`; later runtime
+  commits change only iOS.
+- iOS runtime native compilation and Swift safety checks passed before the final
+  per-turn instrumentation adjustment. The exact candidate is queued in
+  [protected runtime signing/upload run 16](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334625784).
+  Same-candidate distribution verification and TestFlight processing are pending.
+  Earlier signing PASS below applies only to the prerequisite probe.
+- Controller: 11 automated tests passed. Single ownership, epochs, renewable
+  leases, revocation, session/token boundaries, and APNs request construction
+  are implemented. Actual APNs delivery and media operation are untested.
+- Three-second local speech timeout and WAIT_FOR_RELEASE are implemented on both
+  clients. No capture warming, prior-microphone receive workaround, or automatic
+  reacquisition is intended. Actual capture shutdown and system-control behavior
+  require device evidence.
+- Redacted client trace and controller timestamps are implemented. No speech
+  recording. Source safety scan passed; protected runtime CI audit remains pending.
+- Deployment definitions are prepared in [deploy](deploy/README.md).
+  No NUC is selected, controller deployed, or public Funnel enabled.
+  Explicit owner approval relayed by Canonical PM is required before public exposure.
+- Existing free LiveKit credentials previously validated in
+  [credential check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36254826920).
+  Runtime connectivity is not yet validated.
+
+See [physical handoff](docs/physical-qa-handoff.md) and
+[runtime protocol](docs/runtime-protocol.md). All F1–F7 readiness remains **no**
+until the controller endpoint, signed iOS distribution, and physical installs exist.
+VAD is a measurable PCM heuristic, not a claim of robust speech recognition.
+Apple audio lifecycle, locked wake/first-speech loss, and forced-stop/re-press
+semantics remain explicit physical feasibility risks.
+
+## Historical prerequisite evidence
 
 ## Signing diagnostic — PASS — 2026-09-27
 
