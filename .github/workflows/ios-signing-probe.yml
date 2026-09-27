@@ -87,6 +87,64 @@ jobs:
                   stop(message)
               return result.stdout
 
+          def ptt_state(entitlements):
+              if 'com.apple.developer.push-to-talk' not in entitlements:
+                  return 'missing'
+              return 'present' if entitlements['com.apple.developer.push-to-talk'] is True else 'unexpected'
+          
+          def apns_state(entitlements):
+              value = entitlements.get('aps-environment')
+              if value is None:
+                  return 'missing'
+              return value if value in ('production', 'development') else 'unexpected'
+          
+          def id_state(entitlements, key, expected):
+              if key not in entitlements:
+                  return 'missing'
+              return 'match' if entitlements[key] == expected else 'mismatch'
+          
+          def profile_type(profile):
+              entitlements = profile.get('Entitlements', {})
+              debug = entitlements.get('get-task-allow')
+              devices = profile.get('ProvisionedDevices')
+              if profile.get('ProvisionsAllDevices') is True:
+                  return 'enterprise'
+              if devices:
+                  if debug is True:
+                      return 'development'
+                  if debug is False:
+                      return 'adhoc'
+                  return 'unknown'
+              if debug is False and entitlements.get('beta-reports-active') is True:
+                  return 'app-store'
+              return 'unknown'
+          
+          def expiry_state(profile):
+              expiry = profile.get('ExpirationDate')
+              if not isinstance(expiry, datetime.datetime):
+                  return 'unknown'
+              if expiry.tzinfo is None:
+                  expiry = expiry.replace(tzinfo=datetime.timezone.utc)
+              return 'current' if expiry > datetime.datetime.now(datetime.timezone.utc) else 'expired'
+          
+          def safe_diagnostic(signed, profile, team, bundle):
+              permitted = profile.get('Entitlements', {})
+              return {
+                  'SIGNED_APP_PTT_ENTITLEMENT': ptt_state(signed),
+                  'PROFILE_PTT_ENTITLEMENT': ptt_state(permitted),
+                  'SIGNED_APP_APNS': apns_state(signed),
+                  'PROFILE_APNS': apns_state(permitted),
+                  'SIGNED_APP_APP_ID': id_state(signed, 'application-identifier', team + '.' + bundle),
+                  'PROFILE_APP_ID': id_state(permitted, 'application-identifier', team + '.' + bundle),
+                  'SIGNED_APP_TEAM': id_state(signed, 'com.apple.developer.team-identifier', team),
+                  'PROFILE_TEAM': id_state(permitted, 'com.apple.developer.team-identifier', team),
+                  'PROFILE_TEAM_METADATA': 'match' if profile.get('TeamIdentifier') == [team] else 'mismatch',
+                  'SIGNED_APP_NON_DEBUG': 'yes' if signed.get('get-task-allow') is False else 'no',
+                  'PROFILE_NON_DEBUG': 'yes' if permitted.get('get-task-allow') is False else 'no',
+                  'PROFILE_TYPE': profile_type(profile),
+                  'PROFILE_EXPIRY': expiry_state(profile),
+              }
+
           try:
               team = os.environ['APPLE_TEAM_ID']
               key_id = os.environ['ASC_KEY_ID']
@@ -156,6 +214,13 @@ jobs:
                           'Cannot decode the embedded provisioning profile.'))
                   info = plistlib.loads((app / 'Info.plist').read_bytes())
                   bundle = 'ai.slimy.slimetalk.feasibility'
+                  for field, state in safe_diagnostic(signed, profile, team, bundle).items():
+                      print(field + '=' + state, flush=True)
+                  print('SIGNATURE=valid', flush=True)
+                  print('BUNDLE_ID=' + ('match' if info.get('CFBundleIdentifier') == bundle else 'mismatch'), flush=True)
+                  print('PTT_BACKGROUND_MODE=' + ('present' if info.get('UIBackgroundModes') == ['push-to-talk'] else 'unexpected'), flush=True)
+                  if profile.get('TeamIdentifier') != [team]:
+                      stop('Embedded profile team metadata does not match.')
                   if info.get('CFBundleIdentifier') != bundle or info.get('UIBackgroundModes') != ['push-to-talk']:
                       stop('Unexpected bundle ID or background modes.')
                   for entitlements in (signed, profile.get('Entitlements', {})):
@@ -167,7 +232,7 @@ jobs:
                           stop('Unexpected signed application identifier.')
                       if entitlements.get('com.apple.developer.team-identifier') != team:
                           stop('Unexpected signing team.')
-                      if entitlements.get('get-task-allow', False) is not False:
+                      if entitlements.get('get-task-allow') is not False:
                           stop('Unexpected debug entitlement in distribution output.')
                   if profile.get('ProvisionedDevices') or profile.get('ProvisionsAllDevices'):
                       stop('Export is not an App Store distribution profile.')
