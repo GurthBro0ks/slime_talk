@@ -5,27 +5,78 @@ Focused signing/provisioning diagnosis and minimal local repair only. The physic
 feasibility requirements of SLIME_TALK_FEASIBILITY_001 remain unchanged.
 Production implementation and architecture freeze are not authorized.
 
-## Signing diagnostic in progress — 2026-09-27
+## Signing diagnostic — original failure isolated, repair experiment prepared — 2026-09-27
 
-The Canonical PM authorized a precise diagnostic and, if indicated, a standard
-signed-archive repair. Prior setup records below are historical.
+Active scope: SLIME_TALK_SIGNING_DIAGNOSTIC_001. No app implementation or
+architecture changes are authorized by this diagnostic order.
 
-- Workflow commit `8bfaae911798675762c34410ff6ca19e9001b354` separately reports
-  signed-app and embedded-profile PTT/APNs/application/team metadata, profile type,
-  expiry, signature status, and background mode. Only allowlisted status values
-  are printed; no dictionaries, raw profiles, credentials, or distribution logs.
-- Missing `get-task-allow` no longer passes as an implicit false value.
-- [Diagnostic run 5](https://github.com/GurthBro0ks/slime_talk/actions/runs/36320129005)
-  uses the existing unsigned-archive/export path once. Native compile and its
-  cleanup passed. Signing is waiting for the owner's protected-environment review.
-- Offline synthetic regression/security checks: 16 passed. Reproduce from the
-  repository root with `python3 ci/test_signing_diagnostics.py` (Python standard
-  library only). Test commit: `45704c10dc386e140b61b263d43368a0edf0cfba`.
-- The original failing component and root cause remain unknown until the protected
-  diagnostic runs. Signed-archive testing is conditional on that result.
-- No Apple capability, key, certificate, or profile changes in this work order so
-  far. No TestFlight upload or physical-device tests. Approval protections remain
-  unchanged.
+[Protected diagnostic run 5](https://github.com/GurthBro0ks/slime_talk/actions/runs/36320129005),
+commit `8bfaae911798675762c34410ff6ca19e9001b354`, completed after owner approval.
+Native compilation and cleanup passed. Distribution export produced a valid
+signature, but the precise verifier correctly rejected missing app entitlements:
+
+```text
+SIGNED_APP_PTT_ENTITLEMENT=missing
+PROFILE_PTT_ENTITLEMENT=present
+SIGNED_APP_APNS=missing
+PROFILE_APNS=production
+SIGNED_APP_APP_ID=match
+PROFILE_APP_ID=match
+SIGNED_APP_TEAM=match
+PROFILE_TEAM=match
+PROFILE_TEAM_METADATA=match
+SIGNED_APP_NON_DEBUG=yes
+PROFILE_NON_DEBUG=yes
+PROFILE_TYPE=app-store
+PROFILE_EXPIRY=current
+SIGNATURE=valid
+BUNDLE_ID=match
+PTT_BACKGROUND_MODE=present
+```
+
+**ORIGINAL_FAILURE_COMPONENT=signed_app.** Apple provisioning permits both required
+capabilities on this candidate. The old check was not a false positive; its error
+message was insufficiently specific. Why unsigned archive/export omitted the app
+entitlements remains an unproven build-path hypothesis until signed archiving runs.
+
+The diagnostic log inspection found no raw private-key block, unexpected long
+base64 line, or JWT value. Cleanup succeeded; no artifacts or TestFlight build were
+uploaded. This limited log inspection is not a comprehensive account security audit.
+
+### Prepared standard signed-archive experiment
+
+Workflow implementation commit `7cd594a70683962fb3946cbfd8b79d190790416c`;
+cleanup refinement `d9686413957a4c23c5432b2baeef3710cdf72435`.
+
+- Existing bundle/team/capabilities and existing protected API key only.
+- Archive with `CODE_SIGNING_ALLOWED=YES`, `CODE_SIGN_STYLE=Automatic`,
+  `-allowProvisioningUpdates`, and the existing authentication-key arguments.
+- Temporary local runner keychain; original default/search list restored.
+  Newly downloaded runner profiles and private temporary files are cleaned up.
+  No Apple certificate/key deletion or capability toggling.
+- Inspect signed archive app/profile PTT, APNs, identifiers, expiry and signature
+  before distribution export. Export retains the strict app/profile acceptance
+  checks. Missing app `get-task-allow` is not accepted as implicit false.
+- Raw signing logs stay private. No artifact or TestFlight upload step.
+- Pushes only run non-secret checks/compilation. Signing still requires a manual
+  workflow dispatch and the existing `ios-feasibility-signing` owner review.
+- Offline test command: `python3 ci/test_signing_diagnostics.py`.
+  Sixteen synthetic diagnostic/security cases and embedded Python syntax are
+  checked before compilation, without credentials.
+- [First preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325149877)
+  passed. This is NOT evidence that signed archiving works.
+- [Cleanup-refinement check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325188784)
+  tracks the latest workflow.
+
+The signed-archive experiment has not been dispatched. The current assistant
+execution environment failed and browser control is unavailable; the available
+GitHub connector can inspect/update the repository but cannot dispatch a workflow.
+Owner continuation: Actions → iOS signing and entitlement probe → Run workflow →
+main, then approve the protected environment review. Do not rerun diagnostic run 5,
+which would use the old unsigned-archive path.
+
+No Apple capability/profile repair is indicated by run 5. All physical tests remain
+NOT TESTED. No TestFlight readiness or architecture acceptance is claimed.
 
 ## Proven build prerequisite — 2026-09-26
 
