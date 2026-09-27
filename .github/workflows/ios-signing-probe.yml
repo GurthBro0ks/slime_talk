@@ -144,14 +144,6 @@ jobs:
               }
 
           @contextlib.contextmanager
-          def ephemeral_keychain(private):
-              # Only local, disposable runner resources; no Apple certificates are revoked.
-              keychain = private / 'archive-signing.keychain-db'
-              original_default = checked(['security', 'default-keychain', '-d', 'user'], 'Cannot inspect local default keychain.').decode().strip().strip('"')
-              original_list = shlex.split(checked(['security', 'list-keychains', '-d', 'user'], 'Cannot inspect local keychain search list.').decode())
-              password = secrets.token_urlsafe(32)
-              created = False
-              @contextlib.contextmanager
           def ephemeral_profiles():
               roots = [
                   pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles',
@@ -168,7 +160,15 @@ jobs:
                                   path.unlink()
                   print('TEMPORARY_SIGNING_PROFILES_CLEANUP=pass', flush=True)
 
-          try:
+          @contextlib.contextmanager
+          def ephemeral_keychain(private):
+              # Only local, disposable runner resources; no Apple certificates are revoked.
+              keychain = private / 'archive-signing.keychain-db'
+              original_default = checked(['security', 'default-keychain', '-d', 'user'], 'Cannot inspect local default keychain.').decode().strip().strip('"')
+              original_list = shlex.split(checked(['security', 'list-keychains', '-d', 'user'], 'Cannot inspect local keychain search list.').decode())
+              password = secrets.token_urlsafe(32)
+              created = False
+              try:
                   checked(['security', 'create-keychain', '-p', password, str(keychain)], 'Cannot create temporary signing keychain.')
                   created = True
                   checked(['security', 'set-keychain-settings', '-lut', '1800', str(keychain)], 'Cannot configure temporary signing keychain.')
