@@ -46,7 +46,8 @@ uploaded. This limited log inspection is not a comprehensive account security au
 ### Prepared standard signed-archive experiment
 
 Workflow implementation commit `7cd594a70683962fb3946cbfd8b79d190790416c`;
-cleanup refinement `d9686413957a4c23c5432b2baeef3710cdf72435`.
+cleanup refinement `d9686413957a4c23c5432b2baeef3710cdf72435`, corrected before
+signing at `5d8a5dbf28e9bc3d0b809285445c24d0018e31a9`.
 
 - Existing bundle/team/capabilities and existing protected API key only.
 - Archive with `CODE_SIGNING_ALLOWED=YES`, `CODE_SIGN_STYLE=Automatic`,
@@ -66,7 +67,10 @@ cleanup refinement `d9686413957a4c23c5432b2baeef3710cdf72435`.
 - [First preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325149877)
   passed. This is NOT evidence that signed archiving works.
 - [Cleanup-refinement check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325188784)
-  tracks the latest workflow.
+  caught an indentation error before compilation or credential access.
+- [Corrected preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325275292)
+  passed syntax and all 16 regression checks; native compilation is being verified.
+  Signing remains manual and protected.
 
 The signed-archive experiment has not been dispatched. The current assistant
 execution environment failed and browser control is unavailable; the available
