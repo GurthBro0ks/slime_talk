@@ -1,4 +1,4 @@
-name: iOS signing and entitlement probe
+name: iOS feasibility candidate signing
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
   compile:
     if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/main' }}
     runs-on: macos-15
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - name: Fetch exact public source without credentials
         shell: bash
@@ -36,7 +36,13 @@ jobs:
       - name: Check verifier syntax and offline regressions
         shell: bash
         run: python3 ci/test_signing_diagnostics.py
-      - name: Compile native unsigned signing probe
+      - name: Native PTT safety tests
+        shell: bash
+        run: |
+          swiftc ios/SlimeTalk/PTTCore.swift ci/test_ptt.swift -o "$RUNNER_TEMP/ptt-tests"
+          "$RUNNER_TEMP/ptt-tests"
+          rm "$RUNNER_TEMP/ptt-tests"
+      - name: Compile native unsigned feasibility candidate
         shell: bash
         run: bash ci/archive_probe.sh
       - name: Remove temporary build products
@@ -49,7 +55,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     environment: ios-feasibility-signing
     runs-on: macos-15
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Fetch exact public source without credentials
         shell: bash
@@ -358,7 +364,7 @@ jobs:
                   print('PASS: signed app and profile both permit PushToTalk and production APNs for the exact feasibility App ID.')
                   print('PASS: non-debug App Store distribution profile is current.')
                   print('IPA_SHA256=' + hashlib.sha256(ipas[0].read_bytes()).hexdigest())
-                  print('No TestFlight upload, simulator result, or physical-device test. F1-F7 are NOT TESTED.')
+                  print('No TestFlight upload or physical-device test. F1-F7 are NOT TESTED.')
           except SystemExit:
               raise
           except subprocess.TimeoutExpired:

@@ -1,0 +1,4 @@
+import Foundation
+@main struct GateChecks { static func main() {
+ var g=PTTGate();g.connected();assert(g.press());assert(!g.mayCapture(now:0,appleActive:true));assert(g.grant(1,requestedAt:0,now:0));assert(!g.mayCapture(now:0,appleActive:false));assert(g.mayCapture(now:0,appleActive:true));g.captureStarted(now:0);assert(g.renew(requestedAt:1,now:1));assert(g.renew(requestedAt:2,now:2));assert(g.expiry(now:3)=="silence_expiry");g.stop();assert(!g.press());assert(g.state == .WAIT_FOR_RELEASE);g.connected();assert(!g.press());g.release(connected:true);assert(g.press());assert(!g.grant(2,requestedAt:4,now:6));g.release(connected:true);assert(g.press());assert(g.grant(3,requestedAt:7,now:7));assert(!g.renew(requestedAt:8,now:9));assert(g.expiry(now:9)=="authorization_loss");g.stop();assert(!g.mayCapture(now:9,appleActive:true)); print("PASS: native Swift PTT safety transitions")
+} }

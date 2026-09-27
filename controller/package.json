@@ -1,0 +1,1 @@
+{"name":"slime-talk-feasibility-controller","private":true,"type":"module","scripts":{"test":"node --test","start":"node server.mjs"},"engines":{"node":">=22"}}
