@@ -151,7 +151,24 @@ jobs:
               original_list = shlex.split(checked(['security', 'list-keychains', '-d', 'user'], 'Cannot inspect local keychain search list.').decode())
               password = secrets.token_urlsafe(32)
               created = False
+              @contextlib.contextmanager
+          def ephemeral_profiles():
+              roots = [
+                  pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles',
+                  pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles',
+              ]
+              before = {p for root in roots if root.exists() for p in root.iterdir() if p.is_file()}
               try:
+                  yield
+              finally:
+                  for root in roots:
+                      if root.exists():
+                          for path in root.iterdir():
+                              if path.is_file() and path not in before:
+                                  path.unlink()
+                  print('TEMPORARY_SIGNING_PROFILES_CLEANUP=pass', flush=True)
+
+          try:
                   checked(['security', 'create-keychain', '-p', password, str(keychain)], 'Cannot create temporary signing keychain.')
                   created = True
                   checked(['security', 'set-keychain-settings', '-lut', '1800', str(keychain)], 'Cannot configure temporary signing keychain.')
@@ -181,7 +198,7 @@ jobs:
               probe = pathlib.Path(os.environ['RUNNER_TEMP']) / 'slime-talk-signing-probe'
               probe.mkdir(parents=True, exist_ok=True)
               archive = probe / 'SlimeTalk.xcarchive'
-              with tempfile.TemporaryDirectory(prefix='apple-signing-', dir=probe) as private_dir:
+              with ephemeral_profiles(), tempfile.TemporaryDirectory(prefix='apple-signing-', dir=probe) as private_dir:
                   private = pathlib.Path(private_dir)
                   key_path = private / 'AuthKey.p8'
                   key_path.write_text(pem.strip() + '\n')
