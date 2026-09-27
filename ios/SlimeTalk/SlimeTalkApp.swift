@@ -151,8 +151,8 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     }
     func halt(_ reason: String, disconnected: Bool = false) {
         let epoch=gate.epoch;let oldTrack=track;let oldPub=publication;let oldSession=session
-        gate.stop(disconnected:disconnected);track=nil;publication=nil;if disconnected { connected=false };show();evidence(reason)
-        do { try AudioManager.shared.setEngineAvailability(AudioEngineAvailability(isInputAvailable:false,isOutputAvailable:appleActive)); evidence("capture_input_disabled","input=\(AudioManager.shared.engineAvailability.isInputAvailable) engine=\(AudioManager.shared.isEngineRunning)") }
+        gate.stop(disconnected:disconnected);track=nil;publication=nil;if disconnected { connected=false; remoteOwner=nil; manager?.setActiveRemoteParticipant(nil,channelUUID:channelID,completionHandler:nil) };show();evidence(reason)
+        do { try AudioManager.shared.setEngineAvailability(AudioEngineAvailability(isInputAvailable:false,isOutputAvailable:appleActive && !disconnected)); evidence("capture_input_disabled","input=\(AudioManager.shared.engineAvailability.isInputAvailable) engine=\(AudioManager.shared.isEngineRunning)") }
         catch { message="STOP: microphone shutdown could not be confirmed";try? AudioManager.shared.setEngineAvailability(.none) }
         if epoch != nil { forcedEnd=true;manager?.stopTransmitting(channelUUID:channelID) }
         shutdown=Task {
