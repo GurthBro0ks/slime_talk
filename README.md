@@ -5,20 +5,62 @@ Focused signing/provisioning diagnosis and minimal local repair only. The physic
 feasibility requirements of SLIME_TALK_FEASIBILITY_001 remain unchanged.
 Production implementation and architecture freeze are not authorized.
 
-## Signing diagnostic — original failure isolated, repair experiment prepared — 2026-09-27
+## Signing diagnostic — PASS — 2026-09-27
 
-Active scope: SLIME_TALK_SIGNING_DIAGNOSTIC_001. No app implementation or
-architecture changes are authorized by this diagnostic order.
+Completed work order: **SLIME_TALK_SIGNING_DIAGNOSTIC_001**.
+This result accepts the focused signing/provisioning repair only. Production app
+implementation, physical PTT acceptance, and architecture freeze remain outside
+this result. Earlier setup/blocker sections below are historical.
 
-[Protected diagnostic run 5](https://github.com/GurthBro0ks/slime_talk/actions/runs/36320129005),
-commit `8bfaae911798675762c34410ff6ca19e9001b354`, completed after owner approval.
-Native compilation and cleanup passed. Distribution export produced a valid
-signature, but the precise verifier correctly rejected missing app entitlements:
+### Evidence and root cause
+
+The one precise current-path diagnostic,
+[run 5](https://github.com/GurthBro0ks/slime_talk/actions/runs/36320129005),
+at `8bfaae911798675762c34410ff6ca19e9001b354`, isolated the original failure:
+
+- Signed app: PushToTalk **missing**, APNs **missing**.
+- Embedded profile: PushToTalk **present**, APNs **production**.
+- App/profile identifiers and team matched; signature valid; profile current,
+  non-debug App Store distribution; PushToTalk background mode present.
+- Cleanup passed. The old checker correctly rejected the candidate, but its
+  combined failure message did not identify the failing component.
+
+The repaired standard automatic-signing path passed in
+[run 8](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325450420),
+source commit `44df9ce6ca699ab3e60bd105a7df82e73e1b51b2`.
+Workflow implementation: `5d8a5dbf28e9bc3d0b809285445c24d0018e31a9`.
+Compile job: `108637240891`; protected signing job: `108637366487`.
+
+**Root cause demonstrated at the build-path level:** the unsigned archive followed
+by distribution export omitted the requested entitlements from the app signature,
+despite the correct provisioning permissions. Enabling normal automatic signing
+during archive preserved the entitlements through distribution export. Xcode's
+internal reason for the unsigned-path omission was not separately traced.
+
+No Apple capability change, API-key replacement, manual profile regeneration, or
+architecture change was needed. Standard automatic provisioning used the existing
+feasibility App ID/team and authorized key.
+
+### Same-candidate archive and export results
 
 ```text
-SIGNED_APP_PTT_ENTITLEMENT=missing
+ARCHIVE_APP_PTT=present
+ARCHIVE_PROFILE_PTT=present
+ARCHIVE_APNS=development
+ARCHIVE_PROFILE_APNS=development
+ARCHIVE_SIGNED_APP_APP_ID=match
+ARCHIVE_PROFILE_APP_ID=match
+ARCHIVE_SIGNED_APP_TEAM=match
+ARCHIVE_PROFILE_TEAM=match
+ARCHIVE_PROFILE_TEAM_METADATA=match
+ARCHIVE_PROFILE_TYPE=development
+ARCHIVE_PROFILE_EXPIRY=current
+ARCHIVE_SIGNATURE=valid
+TEMPORARY_KEYCHAIN_CLEANUP=pass
+TEMPORARY_ARCHIVE_PROFILES_CLEANUP=pass
+SIGNED_APP_PTT_ENTITLEMENT=present
 PROFILE_PTT_ENTITLEMENT=present
-SIGNED_APP_APNS=missing
+SIGNED_APP_APNS=production
 PROFILE_APNS=production
 SIGNED_APP_APP_ID=match
 PROFILE_APP_ID=match
@@ -32,55 +74,61 @@ PROFILE_EXPIRY=current
 SIGNATURE=valid
 BUNDLE_ID=match
 PTT_BACKGROUND_MODE=present
+PASS: exported distribution application signature verifies.
+PASS: signed app and profile both permit PushToTalk and production APNs for the exact feasibility App ID.
+PASS: non-debug App Store distribution profile is current.
+IPA_SHA256=b8c0633144ab5dadd86c6412bcaa6a81c58c18c75879e74c88dcc345fac617af
+No TestFlight upload, simulator result, or physical-device test. F1-F7 are NOT TESTED.
+TEMPORARY_SIGNING_PROFILES_CLEANUP=pass
+Cleanup complete; no signing files, archives, or IPA artifacts uploaded.
 ```
 
-**ORIGINAL_FAILURE_COMPONENT=signed_app.** Apple provisioning permits both required
-capabilities on this candidate. The old check was not a false positive; its error
-message was insufficiently specific. Why unsigned archive/export omitted the app
-entitlements remains an unproven build-path hypothesis until signed archiving runs.
+The archive used development provisioning/APNs. The resulting distribution export
+correctly changed both app and profile to production APNs and App Store provisioning.
+The exported app/profile both explicitly had `get-task-allow=false`; the profile
+also had the App Store beta-distribution marker and no device/all-device distribution
+restriction. Required identifiers, exact background mode, signature, and expiry
+checks all passed on the same exported candidate.
 
-The diagnostic log inspection found no raw private-key block, unexpected long
-base64 line, or JWT value. Cleanup succeeded; no artifacts or TestFlight build were
-uploaded. This limited log inspection is not a comprehensive account security audit.
+### Repair and reproduction
 
-### Prepared standard signed-archive experiment
-
-Workflow implementation commit `7cd594a70683962fb3946cbfd8b79d190790416c`;
-cleanup refinement `d9686413957a4c23c5432b2baeef3710cdf72435`, corrected before
-signing at `5d8a5dbf28e9bc3d0b809285445c24d0018e31a9`.
-
-- Existing bundle/team/capabilities and existing protected API key only.
-- Archive with `CODE_SIGNING_ALLOWED=YES`, `CODE_SIGN_STYLE=Automatic`,
+- Native unsigned compilation remains a credential-free prerequisite.
+- Protected signing now archives with `CODE_SIGNING_ALLOWED=YES`,
+  `CODE_SIGN_STYLE=Automatic`, the exact existing bundle/team,
   `-allowProvisioningUpdates`, and the existing authentication-key arguments.
-- Temporary local runner keychain; original default/search list restored.
-  Newly downloaded runner profiles and private temporary files are cleaned up.
-  No Apple certificate/key deletion or capability toggling.
-- Inspect signed archive app/profile PTT, APNs, identifiers, expiry and signature
-  before distribution export. Export retains the strict app/profile acceptance
-  checks. Missing app `get-task-allow` is not accepted as implicit false.
-- Raw signing logs stay private. No artifact or TestFlight upload step.
-- Pushes only run non-secret checks/compilation. Signing still requires a manual
-  workflow dispatch and the existing `ios-feasibility-signing` owner review.
-- Offline test command: `python3 ci/test_signing_diagnostics.py`.
-  Sixteen synthetic diagnostic/security cases and embedded Python syntax are
-  checked before compilation, without credentials.
-- [First preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325149877)
-  passed. This is NOT evidence that signed archiving works.
-- [Cleanup-refinement check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325188784)
-  caught an indentation error before compilation or credential access.
-- [Corrected preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325275292)
-  passed syntax, all 16 regression checks, native compilation, and cleanup.
-  Signing remains manual and protected.
+- Archive signature and safe entitlement/profile metadata are checked before export.
+- Distribution verification remains strict; no missing entitlement is waived.
+- Disposable runner keychain and new local profile files are cleaned up; original
+  keychain selection/search list restored. No Apple certificates or keys are revoked.
+- No artifact upload or TestFlight upload step exists in this probe.
+- Reproduce offline classifications: `python3 ci/test_signing_diagnostics.py`.
+- Reproduce signing: Actions → iOS signing and entitlement probe → Run workflow →
+  main → owner approval of `ios-feasibility-signing`. This creates and then removes
+  the probe IPA; it does not distribute a build.
 
-The signed-archive experiment has not been dispatched. The current assistant
-execution environment failed and browser control is unavailable; the available
-GitHub connector can inspect/update the repository but cannot dispatch a workflow.
-Owner continuation: Actions → iOS signing and entitlement probe → Run workflow →
-main, then approve the protected environment review. Do not rerun diagnostic run 5,
-which would use the old unsigned-archive path.
+Sixteen synthetic classification/security checks, embedded Python syntax, native
+compilation, signed archive inspection, distribution verification, and cleanup
+passed. An intermediate cleanup-helper indentation error was caught by the
+credential-free syntax gate in run `36325188784`, corrected in `5d8a5db`, and
+passed preparation run `36325275292` before the protected signing attempt.
 
-No Apple capability/profile repair is indicated by run 5. All physical tests remain
-NOT TESTED. No TestFlight readiness or architecture acceptance is claimed.
+### Security and limits
+
+Inspected successful signing logs contained no raw private-key PEM block, unexpected
+long base64 line, or JWT value. Only allowlisted profile/entitlement statuses and
+the IPA digest were emitted. GitHub's run artifact API reported zero artifacts.
+This is a scoped log/source review, not a comprehensive account audit.
+
+Temporary keychain, profile files, signing key file, raw logs, archive, and IPA were
+removed. No retained IPA exists to upload directly. No TestFlight upload occurred.
+A subsequent upload path must rebuild and verify its own resulting candidate before
+uploading. The Admin API key remains in the existing protected environment.
+
+**READY_FOR_TESTFLIGHT=yes for the signing prerequisite only.** The static probe
+contains no PTT implementation. A runnable physical PTT candidate is NOT ready.
+All F1–F7 remain NOT TESTED; no simulator substitute or latency claim is made.
+Recommended next: Canonical PM reconcile this PASS and direct the next scoped
+TestFlight/prototype work order. Preserve frozen PTT semantics and independent QA.
 
 ## Proven build prerequisite — 2026-09-26
 
@@ -332,4 +380,5 @@ content or publish credentials, private-device identifiers, APNs device tokens, 
 personal account information in this public repository or its logs. Store only
 redacted evidence. Application-level E2EE is outside the approved feasibility scope.
 
-Overall feasibility result: BLOCKED pending setup; architecture remains unproven.
+Overall physical feasibility remains unproven. Signing diagnostic PASS; actual PTT clients,
+controller integration, TestFlight upload, and physical F1–F7 testing remain outstanding.
