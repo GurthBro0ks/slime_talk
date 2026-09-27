@@ -33,6 +33,9 @@ jobs:
           git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
           git checkout --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Check verifier syntax and offline regressions
+        shell: bash
+        run: python3 ci/test_signing_diagnostics.py
       - name: Compile native unsigned signing probe
         shell: bash
         run: bash ci/archive_probe.sh
@@ -57,12 +60,7 @@ jobs:
           git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
           git checkout --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-      - name: Build archive before supplying any private key
-        shell: bash
-        env:
-          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
-        run: bash ci/archive_probe.sh
-      - name: Export with cloud signing and verify actual entitlements
+      - name: Archive with automatic signing then verify archive and distribution
         shell: bash
         env:
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
@@ -75,7 +73,7 @@ jobs:
           umask 077
           ulimit -c 0
           python3 -I - <<'PY'
-          import datetime, hashlib, os, pathlib, plistlib, re, subprocess, tempfile, zipfile
+          import contextlib, datetime, hashlib, os, pathlib, plistlib, re, secrets, shlex, shutil, subprocess, tempfile, zipfile
 
           def stop(message):
               print('FAIL: ' + message, flush=True)
@@ -145,6 +143,30 @@ jobs:
                   'PROFILE_EXPIRY': expiry_state(profile),
               }
 
+          @contextlib.contextmanager
+          def ephemeral_keychain(private):
+              # Only local, disposable runner resources; no Apple certificates are revoked.
+              keychain = private / 'archive-signing.keychain-db'
+              original_default = checked(['security', 'default-keychain', '-d', 'user'], 'Cannot inspect local default keychain.').decode().strip().strip('"')
+              original_list = shlex.split(checked(['security', 'list-keychains', '-d', 'user'], 'Cannot inspect local keychain search list.').decode())
+              password = secrets.token_urlsafe(32)
+              created = False
+              try:
+                  checked(['security', 'create-keychain', '-p', password, str(keychain)], 'Cannot create temporary signing keychain.')
+                  created = True
+                  checked(['security', 'set-keychain-settings', '-lut', '1800', str(keychain)], 'Cannot configure temporary signing keychain.')
+                  checked(['security', 'unlock-keychain', '-p', password, str(keychain)], 'Cannot unlock temporary signing keychain.')
+                  checked(['security', 'list-keychains', '-d', 'user', '-s', str(keychain), *original_list], 'Cannot set temporary keychain search list.')
+                  checked(['security', 'default-keychain', '-d', 'user', '-s', str(keychain)], 'Cannot set temporary default keychain.')
+                  yield
+              finally:
+                  restored_default = subprocess.run(['security', 'default-keychain', '-d', 'user', '-s', original_default], capture_output=True).returncode == 0
+                  restored_list = subprocess.run(['security', 'list-keychains', '-d', 'user', '-s', *original_list], capture_output=True).returncode == 0
+                  removed = not created or subprocess.run(['security', 'delete-keychain', str(keychain)], capture_output=True).returncode == 0
+                  if not (restored_default and restored_list and removed):
+                      stop('Temporary keychain cleanup or restoration failed.')
+                  print('TEMPORARY_KEYCHAIN_CLEANUP=pass', flush=True)
+
           try:
               team = os.environ['APPLE_TEAM_ID']
               key_id = os.environ['ASC_KEY_ID']
@@ -157,6 +179,7 @@ jobs:
               if not pem.strip().startswith('-----BEGIN PRIVATE KEY-----'):
                   stop('Private-key format is invalid.')
               probe = pathlib.Path(os.environ['RUNNER_TEMP']) / 'slime-talk-signing-probe'
+              probe.mkdir(parents=True, exist_ok=True)
               archive = probe / 'SlimeTalk.xcarchive'
               with tempfile.TemporaryDirectory(prefix='apple-signing-', dir=probe) as private_dir:
                   private = pathlib.Path(private_dir)
@@ -169,6 +192,79 @@ jobs:
                       'signingStyle': 'automatic', 'teamID': team,
                       'manageAppVersionAndBuildNumber': False, 'uploadSymbols': False,
                   }))
+
+                  # Standard automatic signing with the existing App ID/team/API key.
+                  # Signing output is captured privately; only fixed status labels escape.
+                  archive_log = private / 'signed-archive.log'
+                  profile_roots = [
+                      pathlib.Path.home() / 'Library/MobileDevice/Provisioning Profiles',
+                      pathlib.Path.home() / 'Library/Developer/Xcode/UserData/Provisioning Profiles',
+                  ]
+                  profiles_before = {p for root in profile_roots if root.exists() for p in root.iterdir() if p.is_file()}
+                  try:
+                      with ephemeral_keychain(private):
+                          with archive_log.open('wb') as log:
+                              result = subprocess.run([
+                                  'xcodebuild', 'archive',
+                                  '-project', 'ios/SlimeTalk.xcodeproj', '-scheme', 'SlimeTalk',
+                                  '-configuration', 'Release', '-destination', 'generic/platform=iOS',
+                                  '-archivePath', str(archive), '-derivedDataPath', str(probe / 'DerivedData'),
+                                  'CODE_SIGNING_ALLOWED=YES', 'CODE_SIGN_STYLE=Automatic',
+                                  'PRODUCT_BUNDLE_IDENTIFIER=ai.slimy.slimetalk.feasibility',
+                                  'DEVELOPMENT_TEAM=' + team,
+                                  'CURRENT_PROJECT_VERSION=' + os.environ['GITHUB_RUN_NUMBER'],
+                                  '-allowProvisioningUpdates', '-authenticationKeyPath', str(key_path),
+                                  '-authenticationKeyID', key_id, '-authenticationKeyIssuerID', issuer,
+                              ], stdout=log, stderr=subprocess.STDOUT, timeout=600)
+                          if result.returncode:
+                              diagnostic = archive_log.read_text(errors='replace').lower()
+                              for needle, label in [
+                                  ('no signing certificate', 'no-usable-signing-certificate'),
+                                  ('no profiles for', 'no-matching-profile'),
+                                  ('no devices', 'no-registered-development-devices'),
+                                  ('has no devices', 'no-registered-development-devices'),
+                                  ('does not support', 'unsupported-capability-or-configuration'),
+                                  ("doesn't support", 'unsupported-capability-or-configuration'),
+                                  ("doesn't include", 'profile-missing-required-item'),
+                                  ('no accounts', 'account-access-unavailable'),
+                                  ('not permitted', 'signing-operation-rejected'),
+                                  ('user interaction is not allowed', 'keychain-interaction-required'),
+                              ]:
+                                  if needle in diagnostic:
+                                      print('ARCHIVE_DIAGNOSTIC=' + label, flush=True)
+                              stop('Automatic signed archive failed; sensitive details suppressed.')
+                          archive_app = archive / 'Products/Applications/SlimeTalk.app'
+                          checked(['codesign', '--verify', '--deep', '--strict', str(archive_app)],
+                                  'Archive application signature verification failed.')
+                          archive_signed = plistlib.loads(checked(['codesign', '-d', '--entitlements', ':-', str(archive_app)],
+                                  'Cannot read archive application entitlements.'))
+                          archive_profile = plistlib.loads(checked(['security', 'cms', '-D', '-i', str(archive_app / 'embedded.mobileprovision')],
+                                  'Cannot decode archive profile.'))
+                          archive_metadata = safe_diagnostic(archive_signed, archive_profile, team, 'ai.slimy.slimetalk.feasibility')
+                          print('ARCHIVE_APP_PTT=' + archive_metadata['SIGNED_APP_PTT_ENTITLEMENT'], flush=True)
+                          print('ARCHIVE_PROFILE_PTT=' + archive_metadata['PROFILE_PTT_ENTITLEMENT'], flush=True)
+                          print('ARCHIVE_APNS=' + archive_metadata['SIGNED_APP_APNS'], flush=True)
+                          print('ARCHIVE_PROFILE_APNS=' + archive_metadata['PROFILE_APNS'], flush=True)
+                          for field in ('SIGNED_APP_APP_ID', 'PROFILE_APP_ID', 'SIGNED_APP_TEAM', 'PROFILE_TEAM', 'PROFILE_TEAM_METADATA', 'PROFILE_TYPE', 'PROFILE_EXPIRY'):
+                              print('ARCHIVE_' + field + '=' + archive_metadata[field], flush=True)
+                          print('ARCHIVE_SIGNATURE=valid', flush=True)
+                          if archive_metadata['PROFILE_PTT_ENTITLEMENT'] != 'present':
+                              stop('Apple-generated archive profile excludes required PushToTalk; stop for provisioning review.')
+                          if archive_metadata['SIGNED_APP_PTT_ENTITLEMENT'] != 'present':
+                              stop('Signed archive application lacks required PushToTalk.')
+                          if any(archive_metadata[field] != 'match' for field in ('SIGNED_APP_APP_ID', 'PROFILE_APP_ID', 'SIGNED_APP_TEAM', 'PROFILE_TEAM', 'PROFILE_TEAM_METADATA')):
+                              stop('Archive app or profile identifiers do not match.')
+                          if archive_metadata['PROFILE_EXPIRY'] != 'current':
+                              stop('Archive profile is not current.')
+                          if archive_metadata['SIGNED_APP_APNS'] not in ('development', 'production') or archive_metadata['SIGNED_APP_APNS'] != archive_metadata['PROFILE_APNS']:
+                              stop('Archive APNs entitlements are missing or inconsistent.')
+                  finally:
+                      for root in profile_roots:
+                          if root.exists():
+                              for profile_path in root.iterdir():
+                                  if profile_path.is_file() and profile_path not in profiles_before:
+                                      profile_path.unlink()
+                      print('TEMPORARY_ARCHIVE_PROFILES_CLEANUP=pass', flush=True)
                   export = private / 'export'
                   # Raw Xcode distribution output stays private and is never uploaded.
                   log_path = private / 'export.log'
