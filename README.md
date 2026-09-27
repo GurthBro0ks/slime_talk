@@ -16,8 +16,9 @@ Runtime source commit: `c16987116823f5f96fd7e09e2f0b02efc2c20dfc`.
   APK SHA-256: `7a3d3b9b6a2e6f836fec73e7584ff178a824dcf26add76ca5fd99a151dbce065`.
   APK source: `d6cfe4c8cdb0dc5b5137506dc9889d767e2d8518`; later runtime
   commits change only iOS.
-- iOS runtime native compilation and Swift safety checks passed before the final
-  per-turn instrumentation adjustment. The exact candidate is queued in
+- iOS runtime native compilation and Swift safety checks passed on the exact
+  candidate in [run 15](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334295883).
+  The same source is queued in
   [protected runtime signing/upload run 16](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334625784).
   Same-candidate distribution verification and TestFlight processing are pending.
   Earlier signing PASS below applies only to the prerequisite probe.
