@@ -1,8 +1,31 @@
 # slime_talk — experimental feasibility only
 
-Phase 0, Gate 0C. Active work order: SLIME_TALK_FEASIBILITY_002,
-continuing the scope and F1–F7 tests of SLIME_TALK_FEASIBILITY_001.
+Phase 0, Gate 0C. Active work order: SLIME_TALK_SIGNING_DIAGNOSTIC_001.
+Focused signing/provisioning diagnosis and minimal local repair only. The physical
+feasibility requirements of SLIME_TALK_FEASIBILITY_001 remain unchanged.
 Production implementation and architecture freeze are not authorized.
+
+## Signing diagnostic in progress — 2026-09-27
+
+The Canonical PM authorized a precise diagnostic and, if indicated, a standard
+signed-archive repair. Prior setup records below are historical.
+
+- Workflow commit `8bfaae911798675762c34410ff6ca19e9001b354` separately reports
+  signed-app and embedded-profile PTT/APNs/application/team metadata, profile type,
+  expiry, signature status, and background mode. Only allowlisted status values
+  are printed; no dictionaries, raw profiles, credentials, or distribution logs.
+- Missing `get-task-allow` no longer passes as an implicit false value.
+- [Diagnostic run 5](https://github.com/GurthBro0ks/slime_talk/actions/runs/36320129005)
+  uses the existing unsigned-archive/export path once. Native compile and its
+  cleanup passed. Signing is waiting for the owner's protected-environment review.
+- Offline synthetic regression/security checks: 16 passed. Reproduce from the
+  repository root with `python3 ci/test_signing_diagnostics.py` (Python standard
+  library only). Test commit: `45704c10dc386e140b61b263d43368a0edf0cfba`.
+- The original failing component and root cause remain unknown until the protected
+  diagnostic runs. Signed-archive testing is conditional on that result.
+- No Apple capability, key, certificate, or profile changes in this work order so
+  far. No TestFlight upload or physical-device tests. Approval protections remain
+  unchanged.
 
 ## Proven build prerequisite — 2026-09-26
 
