@@ -69,7 +69,7 @@ signing at `5d8a5dbf28e9bc3d0b809285445c24d0018e31a9`.
 - [Cleanup-refinement check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325188784)
   caught an indentation error before compilation or credential access.
 - [Corrected preparation check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36325275292)
-  passed syntax and all 16 regression checks; native compilation is being verified.
+  passed syntax, all 16 regression checks, native compilation, and cleanup.
   Signing remains manual and protected.
 
 The signed-archive experiment has not been dispatched. The current assistant
