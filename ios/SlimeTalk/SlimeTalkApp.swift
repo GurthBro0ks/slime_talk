@@ -27,6 +27,7 @@ final class PCMObserver: AudioRenderer, @unchecked Sendable {
     let local: Bool; let callback: @Sendable (Bool) -> Void
     private let lock = NSLock(); private var voiced: Double = 0; private var first = true
     init(local: Bool, callback: @escaping @Sendable (Bool) -> Void) { self.local=local; self.callback=callback }
+    func reset() { lock.lock(); voiced=0; first=true; lock.unlock() }
     func render(pcmBuffer b: AVAudioPCMBuffer) {
         lock.lock(); defer { lock.unlock() }
         if first { first=false; evidence(local ? "capture_first_pcm" : "remote_first_pcm") }
@@ -41,6 +42,7 @@ final class PCMObserver: AudioRenderer, @unchecked Sendable {
 final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     var next: (any AudioEngineObserver)?
     func engineWillStart(_ engine: AVAudioEngine, isPlayoutEnabled: Bool, isRecordingEnabled: Bool) -> Int { evidence("engine_will_start","input=\(isRecordingEnabled) output=\(isPlayoutEnabled)"); return next?.engineWillStart(engine,isPlayoutEnabled:isPlayoutEnabled,isRecordingEnabled:isRecordingEnabled) ?? 0 }
+    func engineWillEnable(_ engine: AVAudioEngine, isPlayoutEnabled: Bool, isRecordingEnabled: Bool) -> Int { evidence("engine_will_enable","input=\(isRecordingEnabled) output=\(isPlayoutEnabled)"); return next?.engineWillEnable(engine,isPlayoutEnabled:isPlayoutEnabled,isRecordingEnabled:isRecordingEnabled) ?? 0 }
     func engineDidStop(_ engine: AVAudioEngine, isPlayoutEnabled: Bool, isRecordingEnabled: Bool) -> Int { evidence("engine_did_stop","input=\(isRecordingEnabled) output=\(isPlayoutEnabled)"); return next?.engineDidStop(engine,isPlayoutEnabled:isPlayoutEnabled,isRecordingEnabled:isRecordingEnabled) ?? 0 }
 }
 @MainActor final class PTTModel: NSObject, ObservableObject, PTChannelManagerDelegate, PTChannelRestorationDelegate, RoomDelegate {
@@ -61,7 +63,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
         guard let self, self.gate.mayCapture(now:now(),appleActive:self.appleActive) else { return }
         self.captureObserved=true; if self.publication != nil { self.gate.state = .TRANSMITTING; self.show() }; if speech { self.gate.lastSpeech=now(); if now()-self.lastSpeechLog>0.25 { self.lastSpeechLog=now(); evidence("last_qualifying_speech") } }
     } }
-    let remotePCM=PCMObserver(local:false) { _ in }
+    var remoteObservers: [PCMObserver]=[]
     func show() { state=gate.state.rawValue }
     func bootstrap() async {
         guard manager == nil else { return }
@@ -141,7 +143,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
             }
             let newTrack=await LocalAudioTrack.createTrack()
             guard generation==gate.generation,gate.mayCapture(now:now(),appleActive:appleActive) else { try? await newTrack.stop();return }
-            track=newTrack;captureObserved=false;gate.captureStarted(now:now());newTrack.add(audioRenderer:localPCM)
+            track=newTrack;captureObserved=false;localPCM.reset();gate.captureStarted(now:now());newTrack.add(audioRenderer:localPCM)
             try AudioManager.shared.setEngineAvailability(.default)
             evidence("capture_start_requested")
             let pub=try await room.localParticipant.publish(audioTrack:newTrack)
@@ -172,7 +174,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     func incomingPushResult(channelManager: PTChannelManager, channelUUID: UUID, pushPayload: [String:Any]) -> PTPushResult { evidence("apple_ptt_push");Task { if !connected { await connect() } };return .activeRemoteParticipant(PTParticipant(name:"Pixel test device",image:nil)) }
     func channelManager(_ channelManager: PTChannelManager, failedToJoinChannel channelUUID: UUID, error: Error) { halt("apple_join_failure",disconnected:true) }
     func channelManager(_ channelManager: PTChannelManager, failedToBeginTransmittingInChannel channelUUID: UUID, error: Error) { halt("apple_begin_failure") }
-    nonisolated func room(_ room: Room, participant: RemoteParticipant, didSubscribeTrack publication: RemoteTrackPublication) { Task { @MainActor in evidence("remote_subscription");(publication.track as? RemoteAudioTrack)?.add(audioRenderer:self.remotePCM) } }
+    nonisolated func room(_ room: Room, participant: RemoteParticipant, didSubscribeTrack publication: RemoteTrackPublication) { Task { @MainActor in evidence("remote_subscription");let observer=PCMObserver(local:false) { _ in }; self.remoteObservers.append(observer); if self.remoteObservers.count>50 { self.remoteObservers.removeFirst() }; (publication.track as? RemoteAudioTrack)?.add(audioRenderer:observer) } }
     nonisolated func room(_ room: Room, didStartReconnectWithMode reconnectMode: ReconnectMode) { Task { @MainActor in self.halt("media_connection_loss",disconnected:true) } }
     nonisolated func room(_ room: Room, didCompleteReconnectWithMode reconnectMode: ReconnectMode) { Task { @MainActor in self.connected=true;self.gate.connected();self.show();evidence("media_reconnected_no_reacquire") } }
     nonisolated func room(_ room: Room, didDisconnectWithError error: LiveKitError?) { Task { @MainActor in guard !self.connecting else { return }; self.halt("media_disconnected",disconnected:true) } }
