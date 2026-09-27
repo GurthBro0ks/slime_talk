@@ -2,6 +2,11 @@ name: iOS feasibility candidate signing
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_testflight:
+        description: Upload verified runtime candidate to TestFlight (no compliance answers)
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -36,6 +41,11 @@ jobs:
       - name: Check verifier syntax and offline regressions
         shell: bash
         run: python3 ci/test_signing_diagnostics.py
+      - name: Controller and source safety checks
+        shell: bash
+        run: |
+          node --test controller/test/*.mjs
+          python3 ci/security_check.py
       - name: Native PTT safety tests
         shell: bash
         run: |
@@ -69,6 +79,7 @@ jobs:
       - name: Archive with automatic signing then verify archive and distribution
         shell: bash
         env:
+          UPLOAD_TESTFLIGHT: ${{ inputs.upload_testflight }}
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
           ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
@@ -298,7 +309,6 @@ jobs:
                           '-allowProvisioningUpdates', '-authenticationKeyPath', str(key_path),
                           '-authenticationKeyID', key_id, '-authenticationKeyIssuerID', issuer,
                       ], stdout=log, stderr=subprocess.STDOUT, timeout=600)
-                  key_path.unlink()
                   if result.returncode:
                       diagnostic = log_path.read_text(errors='replace').lower()
                       for needle, label in [
@@ -364,7 +374,41 @@ jobs:
                   print('PASS: signed app and profile both permit PushToTalk and production APNs for the exact feasibility App ID.')
                   print('PASS: non-debug App Store distribution profile is current.')
                   print('IPA_SHA256=' + hashlib.sha256(ipas[0].read_bytes()).hexdigest())
-                  print('No TestFlight upload or physical-device test. F1-F7 are NOT TESTED.')
+                  if os.environ.get('UPLOAD_TESTFLIGHT') == 'true':
+                      if info.get('SLIMEFeasibilityRuntime') != '003':
+                          stop('Only the actual runtime candidate may be uploaded.')
+                      # altool reads the same authorized key from this private directory.
+                      upload_key = private / ('AuthKey_' + key_id + '.p8')
+                      key_path.rename(upload_key)
+                      upload_env = dict(os.environ, API_PRIVATE_KEYS_DIR=str(private))
+                      upload_log = private / 'upload.log'
+                      with upload_log.open('wb') as log:
+                          result = subprocess.run([
+                              'xcrun', 'altool', '--upload-app', '-f', str(ipas[0]),
+                              '--type', 'ios', '--apiKey', key_id, '--apiIssuer', issuer,
+                              '--output-format', 'json',
+                          ], stdout=log, stderr=subprocess.STDOUT, env=upload_env, timeout=600)
+                      # Raw upload output is never logged; processing is checked separately.
+                      if result.returncode:
+                          diagnostic = upload_log.read_text(errors='replace').lower()
+                          for needle, label in [
+                              ('encryption', 'owner-export-compliance-review-required'),
+                              ('agreement', 'owner-agreement-review-required'),
+                              ('icon', 'app-icon-validation'),
+                              ('version', 'build-version-validation'),
+                              ('authentication', 'upload-authentication-failure'),
+                          ]:
+                              if needle in diagnostic:
+                                  print('UPLOAD_DIAGNOSTIC=' + label, flush=True)
+                          stop('TestFlight upload failed; raw upload output suppressed.')
+                      print('TESTFLIGHT_UPLOAD_COMMAND=accepted', flush=True)
+                      print('TESTFLIGHT_PROCESSING=not-yet-verified', flush=True)
+                      print('IOS_VERSION=' + str(info.get('CFBundleShortVersionString')), flush=True)
+                      print('IOS_BUILD=' + str(info.get('CFBundleVersion')), flush=True)
+                      print('Owner export-compliance answers were NOT supplied.', flush=True)
+                  else:
+                      print('TESTFLIGHT_UPLOAD=not-requested', flush=True)
+                  print('Physical-device F1-F7 are NOT TESTED.')
           except SystemExit:
               raise
           except subprocess.TimeoutExpired:

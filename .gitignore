@@ -17,3 +17,14 @@ build/
 DerivedData/
 .build/
 xcuserdata/
+
+# Runtime feasibility build products and private deployment configuration
+android/.gradle/
+android/**/build/
+android/local.properties
+controller.env
+devices.json
+*.ipa
+*.apk
+*.keychain-db
+.DS_Store

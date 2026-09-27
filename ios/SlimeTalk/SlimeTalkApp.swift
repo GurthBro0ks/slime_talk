@@ -54,6 +54,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     func bootstrap() async {
         guard manager == nil else { return }
         do {
+            LiveKitSDK.disableLogging()
             AudioManager.shared.audioSession.isAutomaticConfigurationEnabled=false
             try AudioManager.shared.setEngineAvailability(.none)
             AudioManager.shared.set(engineObservers:[EngineEvidence(),AudioManager.shared.audioSession])
