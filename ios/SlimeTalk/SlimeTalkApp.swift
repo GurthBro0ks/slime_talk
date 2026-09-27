@@ -88,7 +88,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     func connect() async {
         guard !connecting else { return }; connecting=true; defer { connecting=false }
         do {
-            halt("connect_reset",disconnected:true); await shutdown?.value
+            halt("connect_reset"); connected=false; if !gate.held { gate.state = .DISCONNECTED }; show(); await shutdown?.value
             await room.disconnect()
             let login=try await api("/login",["device":"iphone","key":pairingKey],authenticated:false)
             guard let s=login["session"] as? String,let url=login["url"] as? String,let token=login["token"] as? String else { throw URLError(.badServerResponse) }; session=s
