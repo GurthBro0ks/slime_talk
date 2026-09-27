@@ -6,10 +6,21 @@ import LiveKit
 
 private let channelID = UUID(uuidString: "838d72ab-e627-4e79-90a4-884f9e3d7bad")!
 private func now() -> Double { ProcessInfo.processInfo.systemUptime }
-private func evidence(_ event: String, _ value: String = "") { print("PTT t=\(Date().timeIntervalSince1970) mono=\(now()) event=\(event) \(value)") }
+@MainActor final class Trace: ObservableObject {
+    static let shared=Trace()
+    @Published var lines: [String]=[]
+    func add(_ line: String) { lines.append(line); if lines.count>5000 { lines.removeFirst(lines.count-5000) } }
+}
+private func evidence(_ event: String, _ value: String = "") {
+    let line="PTT t=\(Date().timeIntervalSince1970) mono=\(now()) event=\(event) \(value)"
+    print(line); Task { @MainActor in Trace.shared.add(line) }
+}
 private enum Vault {
     static func get(_ name: String) -> String { let q: [String: Any] = [kSecClass as String:kSecClassGenericPassword,kSecAttrService as String:"slime-talk-feasibility",kSecAttrAccount as String:name,kSecReturnData as String:true]; var v: CFTypeRef?; guard SecItemCopyMatching(q as CFDictionary,&v) == errSecSuccess, let d = v as? Data else { return "" }; return String(data:d,encoding:.utf8) ?? "" }
     static func set(_ name: String, _ value: String) { let q: [String: Any] = [kSecClass as String:kSecClassGenericPassword,kSecAttrService as String:"slime-talk-feasibility",kSecAttrAccount as String:name]; SecItemDelete(q as CFDictionary); var n=q; n[kSecValueData as String]=Data(value.utf8); n[kSecAttrAccessible as String]=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly; SecItemAdd(n as CFDictionary,nil) }
+}
+private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
 }
 // Observes samples only; never stores PCM or calls a recording API.
 final class PCMObserver: AudioRenderer, @unchecked Sendable {
@@ -40,6 +51,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
     var manager: PTChannelManager?
     lazy var room=Room(delegate:self)
     var gate=PTTGate(); var appleActive=false; var uiHeld=false; var forcedEnd=false; var joined=false
+    let network=URLSession(configuration:.ephemeral,delegate:NoRedirects(),delegateQueue:nil)
     var session=""; var pushToken=""; var connected=false; var connecting=false
     var track: LocalAudioTrack?; var publication: LocalTrackPublication?
     var timer: Task<Void,Never>?; var polling: Task<Void,Never>?
@@ -69,7 +81,7 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
         guard let root=URL(string:endpoint), root.scheme=="https", root.user==nil, root.password==nil, root.query==nil, let url=URL(string:path,relativeTo:root) else { throw URLError(.badURL) }
         var r=URLRequest(url:url); r.httpMethod="POST"; r.timeoutInterval=1.5; r.setValue("application/json",forHTTPHeaderField:"Content-Type")
         if authenticated { r.setValue("Bearer "+session,forHTTPHeaderField:"Authorization") }; r.httpBody=try JSONSerialization.data(withJSONObject:body)
-        let (data,response)=try await URLSession.shared.data(for:r)
+        let (data,response)=try await network.data(for:r)
         guard (response as? HTTPURLResponse)?.statusCode==200, let json=try JSONSerialization.jsonObject(with:data) as? [String:Any] else { throw URLError(.userAuthenticationRequired) }; return json
     }
     func join() { AVAudioSession.sharedInstance().requestRecordPermission { [weak self] allowed in Task { @MainActor in guard let self else { return }; guard allowed else { self.message="Microphone permission required";return }; Vault.set("endpoint",self.endpoint); Vault.set("pairing",self.pairingKey); self.manager?.requestJoinChannel(channelUUID:channelID,descriptor:PTChannelDescriptor(name:"slime talk feasibility",image:nil)) } } }
@@ -123,6 +135,10 @@ final class EngineEvidence: AudioEngineObserver, @unchecked Sendable {
         guard !starting,gate.mayCapture(now:now(),appleActive:appleActive),track==nil else { return };starting=true;defer { starting=false }
         let generation=gate.generation
         do {
+            while !room.localParticipant.permissions.canPublish {
+                guard generation==gate.generation, gate.mayCapture(now:now(),appleActive:appleActive) else { return }
+                try await Task.sleep(nanoseconds:20_000_000)
+            }
             let newTrack=await LocalAudioTrack.createTrack()
             guard generation==gate.generation,gate.mayCapture(now:now(),appleActive:appleActive) else { try? await newTrack.stop();return }
             track=newTrack;captureObserved=false;gate.captureStarted(now:now());newTrack.add(audioRenderer:localPCM)
@@ -170,11 +186,14 @@ struct HoldControl: UIViewRepresentable {
 }
 @main struct SlimeTalkApp: App {
     @StateObject var model=PTTModel()
+    @ObservedObject var trace=Trace.shared
     var body: some Scene { WindowGroup { VStack(spacing:20) {
         Text("slime talk — feasibility").font(.title2)
         Text(model.state).font(.headline);Text(model.message)
         if !model.connected { TextField("Controller HTTPS URL",text:$model.endpoint).textInputAutocapitalization(.never).autocorrectionDisabled();SecureField("iPhone pairing key",text:$model.pairingKey);Button("Join / reconnect") { if model.joined { Task { await model.connect() } } else { model.join() } } }
         HoldControl(down:{model.down()},up:{model.up()}).frame(height:150)
+        ScrollView { Text(trace.lines.suffix(12).joined(separator:"\n")).font(.system(size:9,design:.monospaced)).frame(maxWidth:.infinity,alignment:.leading) }.frame(height:150)
+        ShareLink("Share QA trace",item:trace.lines.joined(separator:"\n"))
         Button("Leave") { model.manager?.leaveChannel(channelUUID:channelID) }
     }.padding().task { await model.bootstrap() } } }
 }

@@ -3,6 +3,8 @@ import android.Manifest
 import android.app.Activity
 import android.os.*
 import android.content.pm.PackageManager
+import android.content.ClipboardManager
+import android.content.ClipData
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -35,11 +37,12 @@ import kotlin.math.sqrt
 class MainActivity:Activity(){
  private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
  private val gate=PTTGate();private lateinit var status:TextView;private lateinit var endpoint:EditText;private lateinit var key:EditText
+ private val trace=ArrayDeque<String>();private lateinit var traceView:TextView
  private var room:Room?=null;private var local:LocalAudioTrack?=null;private var session="";private var connected=false;private var poll:Job?=null;private var publishing=false
  private var publicationReady=false;private var captureObserved=false
- private val http=OkHttpClient.Builder().callTimeout(1500,TimeUnit.MILLISECONDS).build()
+ private val http=OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).callTimeout(1500,TimeUnit.MILLISECONDS).build()
  private fun now()=SystemClock.elapsedRealtime()
- private fun event(name:String,detail:String=""){Log.i("SLIME_PTT","time=${System.currentTimeMillis()} mono=${now()} event=$name $detail")}
+ private fun event(name:String,detail:String=""){val line="time=${System.currentTimeMillis()} mono=${now()} event=$name $detail";Log.i("SLIME_PTT",line);runOnUiThread{trace.addLast(line);while(trace.size>5000)trace.removeFirst();if(::traceView.isInitialized)traceView.text=trace.takeLast(12).joinToString("\n")}}
  private fun show(){status.text=gate.state.name}
  private fun storeKey():SecretKey {val s=KeyStore.getInstance("AndroidKeyStore").apply{load(null)};if(!s.containsAlias("slime-pairing")){val g=KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES,"AndroidKeyStore");g.init(KeyGenParameterSpec.Builder("slime-pairing",KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build());g.generateKey()};return s.getKey("slime-pairing",null)as SecretKey}
  private fun savePairing(){val c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.ENCRYPT_MODE,storeKey());val encrypted=c.doFinal(key.text.toString().toByteArray());getPreferences(MODE_PRIVATE).edit().putString("endpoint",endpoint.text.toString()).putString("key",Base64.encodeToString(c.iv+encrypted,Base64.NO_WRAP)).apply()}
@@ -47,6 +50,7 @@ class MainActivity:Activity(){
  override fun onCreate(b:Bundle?){super.onCreate(b);LiveKit.loggingLevel=io.livekit.android.util.LoggingLevel.OFF;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,40,28,20)};status=TextView(this);endpoint=EditText(this).apply{hint="Approved controller HTTPS URL";setText(getPreferences(MODE_PRIVATE).getString("endpoint",""))};key=EditText(this).apply{hint="Pixel pairing key";inputType=129;setText(loadPairing())};box.addView(status);box.addView(endpoint);box.addView(key)
  box.addView(Button(this).apply{text="Join / reconnect";setOnClickListener{if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),1)else scope.launch{join()}}})
  box.addView(Button(this).apply{text="HOLD TO TALK";minimumHeight=300;setOnTouchListener{_,e->when(e.actionMasked){MotionEvent.ACTION_DOWN->{press();true};MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL->{release();true};MotionEvent.ACTION_MOVE->{if(e.x<0||e.y<0||e.x>width||e.y>height)release();true};else->true}}})
+ traceView=TextView(this).apply{textSize=9f};box.addView(ScrollView(this).apply{addView(traceView)},LinearLayout.LayoutParams(-1,240));box.addView(Button(this).apply{text="Copy QA trace";setOnClickListener{(getSystemService(CLIPBOARD_SERVICE)as ClipboardManager).setPrimaryClip(ClipData.newPlainText("PTT QA trace",trace.joinToString("\n")))}})
  setContentView(box);show();scope.launch{while(isActive){delay(50);gate.expiry(now())?.let{halt(it)}}}
  }
  private suspend fun api(path:String,body:JSONObject=JSONObject(),auth:Boolean=true):JSONObject {
@@ -69,6 +73,7 @@ class MainActivity:Activity(){
  private fun startPoll(){poll?.cancel();poll=scope.launch{while(isActive){try{val sent=now();val e=gate.epoch;if(e!=null){api("/renew",JSONObject().put("epoch",e));if(gate.epoch==e&&!gate.renew(sent,now()))halt("authorization_loss")};val s=api("/status");if(gate.epoch!=null&&(s.optString("owner")!="pixel"||s.optLong("epoch")!=gate.epoch))halt("authorization_loss");if(gate.epoch==null&&!gate.held){gate.state=if(s.optBoolean("busy"))PTTGate.State.BUSY else PTTGate.State.IDLE;show()}}catch(_:Exception){halt("controller_connection_loss",true);return@launch};delay(500)}}}
  private fun press(){event("physical_press");if(!connected||!gate.press())return;show();val generation=gate.generation;val sent=now()
  scope.launch{try{val grant=api("/request",JSONObject().put("requestId",UUID.randomUUID().toString()));if(!grant.optBoolean("granted")){gate.state=PTTGate.State.BUSY;show();event("deny");return@launch};val epoch=grant.getLong("epoch");if(gate.generation!=generation||!gate.grant(epoch,sent,now())){api("/release",JSONObject().put("epoch",epoch));return@launch};event("grant","epoch=$epoch");show();val r=room?:error("no room");if(!gate.canCapture(now()))return@launch
+ while(r.localParticipant.permissions?.canPublish!=true){if(gate.generation!=generation||!gate.canCapture(now()))return@launch;delay(20)}
  val t=r.localParticipant.createAudioTrack();local=t;t.addSink(LocalPCM());gate.captureStarted(now());publishing=true;event("capture_start_requested")
  val ok=r.localParticipant.publishAudioTrack(t);publishing=false
  if(!ok||gate.generation!=generation||!gate.canCapture(now())){t.stop();r.localParticipant.unpublishTrack(t);t.dispose();if(gate.generation==generation)halt("publish_failure");return@launch}

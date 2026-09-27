@@ -18,10 +18,12 @@ export function serverFor(core){
  });
 }
 if(import.meta.url===pathToFileURL(process.argv[1]).href){
+ try {
  const env=process.env;const devices=JSON.parse(readFileSync(env.DEVICE_KEYS_FILE,'utf8'));for(const [name,key]of Object.entries(devices))if(!['pixel','iphone'].includes(name)||typeof key!=='string'||key.length<32)throw Error('invalid device configuration');
  const log=(event,fields)=>console.log(JSON.stringify({time:new Date().toISOString(),mono_ms:Math.round(performance.now()),event,...fields}));
  const media=mediaAdapter(env);await media.reset();
  const core=new Controller({devices,media,wake:apnsAdapter(env,log),log});
  setInterval(()=>core.tick().catch(()=>log('revoke_failed',{})),100).unref();
  const server=serverFor(core);server.requestTimeout=4000;server.headersTimeout=5000;server.listen(8787,'127.0.0.1',()=>log('listening',{}));
+ } catch { console.error('Controller startup failed; private configuration details suppressed.'); process.exitCode=1; }
 }
