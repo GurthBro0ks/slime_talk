@@ -1,9 +1,9 @@
-# Feasibility deployment — NUC2 preparation, NOT ENABLED
+# Feasibility deployment — NUC2 temporary controller
 
 The owner approved NUC2 and temporary public Funnel exposure for Phase-0 testing.
-As of 2026-09-28, the controller is **not deployed**: the required LiveKit and APNs
-credentials are absent from the expected private NUC2 paths, and the deployment
-account cannot perform the required root-owned installation. Node 22+ is required.
+The controller was installed and started on 2026-09-28 from
+`efb852a001c604c97d31cca5df5da3bee0bfb8a3`. Node 22+ is required.
+See [NUC2 deployment evidence](NUC2_DEPLOYMENT_EVIDENCE.md) for the current gate.
 No packages or paid services are needed. Existing free LiveKit carries audio.
 
 Transfer the already authorized server credentials privately into the host's secret files;
@@ -20,8 +20,8 @@ Prepared layout:
 
 Pairing material was generated on NUC2 in
 `/home/slimy/.local/share/slime-talk-feasibility/devices.json` (private directory
-0700, file 0600). Preserve these credentials and install that file at the prepared
-path when privileged installation is possible. On another host with no existing
+0700, file 0600), and installed at the prepared service path. Preserve the private
+copy. On another host with no existing
 pairing file, create pairing material locally with:
 
 ```sh
@@ -34,8 +34,8 @@ Clients require HTTPS and store pairing material using Android Keystore encrypti
 or iOS Keychain. Revoke a device by replacing its private host key and restarting
 (the controller clears room participants before accepting requests).
 
-Once the private service is configured, its only listener is `127.0.0.1:8787`.
-The systemd unit does not enable itself. Approved host activation commands are:
+The private service's only listener is `127.0.0.1:8787`.
+Approved host activation commands are:
 
 ```sh
 sudo systemctl daemon-reload
@@ -66,3 +66,16 @@ mapping:
 tailscale funnel --https=8443 off
 sudo systemctl stop slime-talk-feasibility.service
 ```
+
+Run the local smoke test with the isolated `livekit==1.1.19` Python environment:
+
+```sh
+/home/slimy/.local/share/slime-talk-feasibility/smoke-venv/bin/python \
+  deploy/smoke_controller.py \
+  /home/slimy/.local/share/slime-talk-feasibility/devices.json
+```
+
+It tests real device logins, two receive-only LiveKit connections, arbitration,
+lease expiry, and SDK cleanup without displaying credentials. Restart only
+`slime-talk-feasibility.service` afterward to clear the test sessions. Do not
+register a dummy APNs token before making a grant that could trigger a push.
