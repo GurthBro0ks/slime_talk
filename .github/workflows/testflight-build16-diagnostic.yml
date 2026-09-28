@@ -1,0 +1,86 @@
+name: TestFlight build 16 read-only diagnostic
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/testflight-build16-diagnostic.yml']
+permissions: {}
+concurrency:
+  group: testflight-build16-diagnostic
+  cancel-in-progress: false
+jobs:
+  read-build16:
+    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/main' }}
+    environment: ios-feasibility-signing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read exact app upload and build processing records
+        shell: bash
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          node --input-type=module <<'JS'
+          import {createPrivateKey,sign} from 'node:crypto';
+          const app='6816454718', bundle='ai.slimy.slimetalk.feasibility';
+          const safe = v => typeof v==='string' && /^[A-Za-z0-9_.: +\-]{1,160}$/.test(v) ? v : null;
+          const out=(name,value)=>console.log(name+'='+JSON.stringify(value));
+          try {
+           const key=createPrivateKey(process.env.ASC_API_KEY_P8);
+           if(key.asymmetricKeyType!=='ec'||key.asymmetricKeyDetails?.namedCurve!=='prime256v1')throw Error();
+           const enc=v=>Buffer.from(JSON.stringify(v)).toString('base64url');
+           async function get(path){
+             const u=new URL(path,'https://api.appstoreconnect.apple.com');
+             if(u.origin!=='https://api.appstoreconnect.apple.com'||!u.pathname.startsWith('/v1/'))throw Error();
+             const now=Math.floor(Date.now()/1000);
+             const raw=enc({alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'})+'.'+enc({iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+120,aud:'appstoreconnect-v1',scope:['GET '+u.pathname]});
+             const jwt=raw+'.'+sign('sha256',Buffer.from(raw),{key,dsaEncoding:'ieee-p1363'}).toString('base64url');
+             const r=await fetch(u,{method:'GET',redirect:'error',headers:{Authorization:'Bearer '+jwt,Accept:'application/json'},signal:AbortSignal.timeout(20000)});
+             if(!r.ok){out('APPLE_HTTP_ERROR',{path:u.pathname,status:r.status});throw Error();}
+             return r.json();
+           }
+           const a=await get('/v1/apps/'+app);
+           if(a.data?.id!==app||a.data?.attributes?.bundleId!==bundle)throw Error();
+           out('APP_ID_MATCH',true);
+           const uploads=await get('/v1/apps/'+app+'/buildUploads?limit=200');
+           if(!Array.isArray(uploads.data))throw Error();
+           let matches=[];
+           for(const u of uploads.data){
+             const a=u.attributes??{};
+             if(String(a.cfBundleVersion)!=='16'||a.cfBundleShortVersionString!=='0.1.0')continue;
+             matches.push(u);
+             const s=a.state;
+             const state=typeof s==='string'?s:s?.state;
+             const date=a.createdDate??a.uploadedDate;
+             const age=date&&Number.isFinite(Date.parse(date))?Math.round((Date.now()-Date.parse(date))/360000)/10:null;
+             out('BUILD_UPLOAD',{id:safe(u.id),version:safe(a.cfBundleShortVersionString),build:safe(a.cfBundleVersion),state:safe(state),createdDate:safe(date),ageHours:age,processingOver24Hours:state==='PROCESSING'&&age>24,buildResource:safe(u.relationships?.build?.data?.id)});
+             if(s&&typeof s==='object'){
+               for(const kind of ['errors','warnings','infos']){
+                 if(Array.isArray(s[kind]))out('UPLOAD_'+kind.toUpperCase(),s[kind].map(e=>({code:safe(e.code),messageAvailable:!!(e.description||e.detail||e.message),itmsCodes:JSON.stringify(e).match(/ITMS-[0-9]+/g)??[]})));
+               }
+             }
+           }
+           out('MATCHING_UPLOAD_COUNT',matches.length);
+           out('UPLOAD_LIST_COMPLETE',!uploads.links?.next);
+           const builds=await get('/v1/builds?filter[app]='+app+'&filter[version]=16&include=preReleaseVersion,buildBetaDetail&limit=200');
+           if(!Array.isArray(builds.data))throw Error();
+           let count=0;
+           for(const b of builds.data){
+             const pre=(builds.included??[]).find(x=>x.type==='preReleaseVersions'&&x.id===b.relationships?.preReleaseVersion?.data?.id);
+             if(pre?.attributes?.version!=='0.1.0')continue;
+             count++;
+             const beta=(builds.included??[]).find(x=>x.type==='buildBetaDetails'&&x.id===b.relationships?.buildBetaDetail?.data?.id);
+             out('BUILD_RESOURCE',{id:safe(b.id),version:'0.1.0',build:safe(b.attributes?.version),processingState:safe(b.attributes?.processingState),uploadedDate:safe(b.attributes?.uploadedDate),internalBuildState:safe(beta?.attributes?.internalBuildState)});
+           }
+           out('MATCHING_BUILD_COUNT',count);
+           out('BUILD_LIST_COMPLETE',!builds.links?.next);
+           out('TESTFLIGHT_UI_VISIBILITY','NOT_CHECKED_BY_API');
+           out('READ_ONLY_DIAGNOSTIC','PASS');
+          } catch {out('READ_ONLY_DIAGNOSTIC','BLOCKED; sensitive exception details suppressed');process.exitCode=1;}
+          
+          JS
