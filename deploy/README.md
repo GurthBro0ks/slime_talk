@@ -30,6 +30,12 @@ node deploy/generate-device-keys.mjs /PRIVATE/PATH/devices.json
 
 Copy only the Pixel device key into the Pixel enrollment form and only the iPhone
 key into its form; these are per-device credentials, not server/API secrets.
+For later physical enrollment, the owner can show one existing key at a time in
+their private interactive NUC2 terminal with
+`python3 deploy/show_device_pairing.py pixel` or
+`python3 deploy/show_device_pairing.py iphone`. Do not run that helper
+in CI, agent tools, recorded terminals, or shared screens. It creates no new
+key material. Enter the displayed HTTPS origin and matching key on each device.
 Clients require HTTPS and store pairing material using Android Keystore encryption
 or iOS Keychain. Revoke a device by replacing its private host key and restarting
 (the controller clears room participants before accepting requests).
