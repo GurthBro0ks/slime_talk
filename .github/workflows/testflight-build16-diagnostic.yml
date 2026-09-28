@@ -39,7 +39,7 @@ jobs:
              const u=new URL(path,'https://api.appstoreconnect.apple.com');
              if(u.origin!=='https://api.appstoreconnect.apple.com'||!u.pathname.startsWith('/v1/'))throw Error();
              const now=Math.floor(Date.now()/1000);
-             const raw=enc({alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'})+'.'+enc({iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+120,aud:'appstoreconnect-v1',scope:['GET '+u.pathname]});
+             const raw=enc({alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'})+'.'+enc({iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+120,aud:'appstoreconnect-v1',scope:['GET '+u.pathname+u.search]});
              const jwt=raw+'.'+sign('sha256',Buffer.from(raw),{key,dsaEncoding:'ieee-p1363'}).toString('base64url');
              const r=await fetch(u,{method:'GET',redirect:'error',headers:{Authorization:'Bearer '+jwt,Accept:'application/json'},signal:AbortSignal.timeout(20000)});
              if(!r.ok){
