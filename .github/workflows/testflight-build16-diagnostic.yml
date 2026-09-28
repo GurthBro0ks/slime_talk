@@ -30,6 +30,7 @@ jobs:
           const app='6816454718', bundle='ai.slimy.slimetalk.feasibility';
           const safe = v => typeof v==='string' && /^[A-Za-z0-9_.: +\-]{1,160}$/.test(v) ? v : null;
           const out=(name,value)=>console.log(name+'='+JSON.stringify(value));
+          let endpointErrors=0;
           try {
            const key=createPrivateKey(process.env.ASC_API_KEY_P8);
            if(key.asymmetricKeyType!=='ec'||key.asymmetricKeyDetails?.namedCurve!=='prime256v1')throw Error();
@@ -41,7 +42,15 @@ jobs:
              const raw=enc({alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'})+'.'+enc({iss:process.env.ASC_ISSUER_ID,iat:now,exp:now+120,aud:'appstoreconnect-v1',scope:['GET '+u.pathname]});
              const jwt=raw+'.'+sign('sha256',Buffer.from(raw),{key,dsaEncoding:'ieee-p1363'}).toString('base64url');
              const r=await fetch(u,{method:'GET',redirect:'error',headers:{Authorization:'Bearer '+jwt,Accept:'application/json'},signal:AbortSignal.timeout(20000)});
-             if(!r.ok){out('APPLE_HTTP_ERROR',{path:u.pathname,status:r.status});throw Error();}
+             if(!r.ok){
+               endpointErrors++;
+               const body=await r.json().catch(()=>({}));
+               const errors=Array.isArray(body.errors)?body.errors:[];
+               // Never emit Apple's free-form detail, tokens, or request headers.
+               out('APPLE_HTTP_ERROR',{path:u.pathname,status:r.status,codes:errors.map(e=>typeof e.code==='string'&&/^[A-Z0-9_.-]{1,80}$/.test(e.code)?e.code:'UNRECOGNIZED'),keyDoesNotAllowRequest:errors.some(e=>/API key in use does not allow this request/i.test(String(e.detail))),insufficientScope:errors.some(e=>/insufficient scope|scope does not|scope is invalid/i.test(String(e.detail))),agreementActionRequired:errors.some(e=>/agreement|legal|contract/i.test(String(e.detail)))});
+               if(errors.some(e=>/agreement|legal|contract|export compliance/i.test(String(e.detail))))throw Error();
+               return {data:[],unavailable:true};
+             }
              return r.json();
            }
            const a=await get('/v1/apps/'+app);
@@ -65,8 +74,8 @@ jobs:
                }
              }
            }
-           out('MATCHING_UPLOAD_COUNT',matches.length);
-           out('UPLOAD_LIST_COMPLETE',!uploads.links?.next);
+           out('MATCHING_UPLOAD_COUNT',uploads.unavailable?null:matches.length);
+           out('UPLOAD_LIST_COMPLETE',!uploads.unavailable&&!uploads.links?.next);
            const builds=await get('/v1/builds?filter[app]='+app+'&filter[version]=16&include=preReleaseVersion,buildBetaDetail&limit=200');
            if(!Array.isArray(builds.data))throw Error();
            let count=0;
@@ -77,10 +86,11 @@ jobs:
              const beta=(builds.included??[]).find(x=>x.type==='buildBetaDetails'&&x.id===b.relationships?.buildBetaDetail?.data?.id);
              out('BUILD_RESOURCE',{id:safe(b.id),version:'0.1.0',build:safe(b.attributes?.version),processingState:safe(b.attributes?.processingState),uploadedDate:safe(b.attributes?.uploadedDate),internalBuildState:safe(beta?.attributes?.internalBuildState)});
            }
-           out('MATCHING_BUILD_COUNT',count);
-           out('BUILD_LIST_COMPLETE',!builds.links?.next);
+           out('MATCHING_BUILD_COUNT',builds.unavailable?null:count);
+           out('BUILD_LIST_COMPLETE',!builds.unavailable&&!builds.links?.next);
            out('TESTFLIGHT_UI_VISIBILITY','NOT_CHECKED_BY_API');
-           out('READ_ONLY_DIAGNOSTIC','PASS');
+           out('READ_ONLY_DIAGNOSTIC',endpointErrors?'PARTIAL; one or more read endpoints unavailable':'PASS');
+           if(endpointErrors)process.exitCode=1;
           } catch {out('READ_ONLY_DIAGNOSTIC','BLOCKED; sensitive exception details suppressed');process.exitCode=1;}
           
           JS
