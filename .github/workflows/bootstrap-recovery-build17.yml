@@ -1,0 +1,75 @@
+name: Bootstrap recovery build 17 — one controlled upload
+on:
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: ios-signing-probe
+  cancel-in-progress: false
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+jobs:
+  compile:
+    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/main' && github.run_attempt == 1 }}
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Fetch and verify frozen runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin https://github.com/GurthBro0ks/slime_talk.git
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA" c16987116823f5f96fd7e09e2f0b02efc2c20dfc
+          git checkout --detach "$GITHUB_SHA"
+          bash ci/verify_build17_source.sh
+      - name: Safety checks
+        run: |
+          set -euo pipefail
+          python3 ci/test_signing_diagnostics.py
+          python3 ci/test_build17_evidence.py
+          python3 ci/security_check.py
+          node --test controller/test/*.mjs
+          swiftc ios/SlimeTalk/PTTCore.swift ci/test_ptt.swift -o "$RUNNER_TEMP/ptt-tests"
+          "$RUNNER_TEMP/ptt-tests"
+      - name: Compile build 17
+        run: GITHUB_RUN_NUMBER=17 bash ci/archive_probe.sh
+      - name: Cleanup
+        if: always()
+        run: rm -rf -- "$RUNNER_TEMP/slime-talk-signing-probe" "$RUNNER_TEMP/ptt-tests"
+  sign-upload-poll:
+    needs: compile
+    environment: ios-feasibility-signing
+    runs-on: macos-15
+    timeout-minutes: 55
+    steps:
+      - name: Fetch and verify same frozen runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin https://github.com/GurthBro0ks/slime_talk.git
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA" c16987116823f5f96fd7e09e2f0b02efc2c20dfc
+          git checkout --detach "$GITHUB_SHA"
+          bash ci/verify_build17_source.sh
+      - name: Verify signed candidate and upload exactly once
+        env:
+          UPLOAD_TESTFLIGHT: 'true'
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          ulimit -c 0
+          python3 -I ci/build17_sign.py
+      - name: Poll exact Apple build read-only for at most 20 minutes
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ vars.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ vars.ASC_ISSUER_ID }}
+        run: node ci/poll_build17.mjs
+      - name: Remove all private signing and upload files
+        if: always()
+        run: rm -rf -- "$RUNNER_TEMP/slime-talk-signing-probe"
