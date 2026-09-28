@@ -40,12 +40,12 @@ Clients require HTTPS and store pairing material using Android Keystore encrypti
 or iOS Keychain. Revoke a device by replacing its private host key and restarting
 (the controller clears room participants before accepting requests).
 
-The private service's only listener is `127.0.0.1:8787`.
-Approved host activation commands are:
+The private service's only listener is `127.0.0.1:8787`. The temporary
+deployment is running, and the unit is disabled for automatic boot start.
+After a reboot, start only this service when the temporary test window resumes:
 
 ```sh
-sudo systemctl daemon-reload
-sudo systemctl enable --now slime-talk-feasibility
+sudo systemctl start slime-talk-feasibility.service
 ```
 
 NUC2 already serves an unrelated public Funnel on HTTPS port 443, proxying to

@@ -15,6 +15,8 @@ remain unverified. `READY_FOR_PHYSICAL_QA=no`.
   2026-09-28 17:07:32 UTC, with `NRestarts=0` and only
   `127.0.0.1:8787` listening for the controller. The restart cleared the
   in-memory test sessions; the LiveKit participant check found zero clients.
+  The unit is disabled for automatic boot start while this deployment is
+  temporary.
 - Root gate: `sudo /usr/bin/python3 deploy/nuc2_root_gate.py` passed its
   permission, installed-byte, service, participant, and secret-log checks.
   The first gate run reached the participant query after a successful restart
@@ -66,7 +68,8 @@ remain unverified. `READY_FOR_PHYSICAL_QA=no`.
   8443. The installed CLI then showed only the intact 443 mapping. Restoring
   only `tailscale funnel --bg --https=8443 http://127.0.0.1:8787`
   restored the exact authorized mapping. Final Funnel ports: 443 and 8443.
-  The service remains enabled and running for the temporary test window.
+  The service remains running for the temporary test window; it is disabled
+  for automatic boot start.
 
 ## Enrollment and remaining gates
 
