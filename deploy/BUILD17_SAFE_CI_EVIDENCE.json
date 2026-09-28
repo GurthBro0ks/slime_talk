@@ -1,0 +1,909 @@
+{
+  "workflow": {
+    "conclusion": "failure",
+    "createdAt": "2026-09-28T19:05:02Z",
+    "headSha": "4aeb9473b859b88c5f2f5a3ab99aa960a83696da",
+    "jobs": [
+      {
+        "completedAt": "2026-09-28T19:10:16Z",
+        "conclusion": "success",
+        "databaseId": 109088693108,
+        "name": "compile",
+        "startedAt": "2026-09-28T19:05:15Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-28T19:05:16Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-28T19:05:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:05:18Z",
+            "conclusion": "success",
+            "name": "Fetch and verify frozen runtime",
+            "number": 2,
+            "startedAt": "2026-09-28T19:05:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:05:38Z",
+            "conclusion": "success",
+            "name": "Safety checks",
+            "number": 3,
+            "startedAt": "2026-09-28T19:05:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:10:09Z",
+            "conclusion": "success",
+            "name": "Compile build 17",
+            "number": 4,
+            "startedAt": "2026-09-28T19:05:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:10:11Z",
+            "conclusion": "success",
+            "name": "Cleanup",
+            "number": 5,
+            "startedAt": "2026-09-28T19:10:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:10:14Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 6,
+            "startedAt": "2026-09-28T19:10:11Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/GurthBro0ks/slime_talk/actions/runs/36469738250/job/109088693108"
+      },
+      {
+        "completedAt": "2026-09-28T19:34:06Z",
+        "conclusion": "failure",
+        "databaseId": 109090765505,
+        "name": "sign-upload-poll",
+        "startedAt": "2026-09-28T19:11:02Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-28T19:11:03Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-28T19:11:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:11:04Z",
+            "conclusion": "success",
+            "name": "Fetch and verify same frozen runtime",
+            "number": 2,
+            "startedAt": "2026-09-28T19:11:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:14:57Z",
+            "conclusion": "success",
+            "name": "Verify signed candidate and upload exactly once",
+            "number": 3,
+            "startedAt": "2026-09-28T19:11:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:34:02Z",
+            "conclusion": "failure",
+            "name": "Poll exact Apple build read-only for at most 20 minutes",
+            "number": 4,
+            "startedAt": "2026-09-28T19:14:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:34:03Z",
+            "conclusion": "success",
+            "name": "Remove all private signing and upload files",
+            "number": 5,
+            "startedAt": "2026-09-28T19:34:02Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-28T19:34:04Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 6,
+            "startedAt": "2026-09-28T19:34:03Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/GurthBro0ks/slime_talk/actions/runs/36469738250/job/109090765505"
+      }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-09-28T19:34:06Z",
+    "url": "https://github.com/GurthBro0ks/slime_talk/actions/runs/36469738250"
+  },
+  "records": [
+    {
+      "log_timestamp": "2026-09-28T19:05:18.1502490Z",
+      "field": "BUILD_17_SOURCE",
+      "value": "c16987116823f5f96fd7e09e2f0b02efc2c20dfc"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:05:18.1503310Z",
+      "field": "RUNTIME_IDENTITY",
+      "value": "byte-identical; controller tests excluded"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:11:04.8650020Z",
+      "field": "BUILD_17_SOURCE",
+      "value": "c16987116823f5f96fd7e09e2f0b02efc2c20dfc"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:11:04.8803750Z",
+      "field": "RUNTIME_IDENTITY",
+      "value": "byte-identical; controller tests excluded"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5262740Z",
+      "field": "ARCHIVE_APP_PTT",
+      "value": "present"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5264950Z",
+      "field": "ARCHIVE_PROFILE_PTT",
+      "value": "present"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5266620Z",
+      "field": "ARCHIVE_APNS",
+      "value": "development"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5268430Z",
+      "field": "ARCHIVE_PROFILE_APNS",
+      "value": "development"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5270240Z",
+      "field": "ARCHIVE_SIGNED_APP_APP_ID",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5279670Z",
+      "field": "ARCHIVE_PROFILE_APP_ID",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5280740Z",
+      "field": "ARCHIVE_SIGNED_APP_TEAM",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5281230Z",
+      "field": "ARCHIVE_PROFILE_TEAM",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5281700Z",
+      "field": "ARCHIVE_PROFILE_TEAM_METADATA",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5282210Z",
+      "field": "ARCHIVE_PROFILE_TYPE",
+      "value": "development"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5282640Z",
+      "field": "ARCHIVE_PROFILE_EXPIRY",
+      "value": "current"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5282980Z",
+      "field": "ARCHIVE_SIGNATURE",
+      "value": "valid"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5620180Z",
+      "field": "TEMPORARY_KEYCHAIN_CLEANUP",
+      "value": "pass"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:36.5629170Z",
+      "field": "TEMPORARY_ARCHIVE_PROFILES_CLEANUP",
+      "value": "pass"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1204810Z",
+      "field": "SIGNED_APP_PTT_ENTITLEMENT",
+      "value": "present"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1206270Z",
+      "field": "PROFILE_PTT_ENTITLEMENT",
+      "value": "present"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1206710Z",
+      "field": "SIGNED_APP_APNS",
+      "value": "production"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1207000Z",
+      "field": "PROFILE_APNS",
+      "value": "production"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1207420Z",
+      "field": "SIGNED_APP_APP_ID",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1207820Z",
+      "field": "PROFILE_APP_ID",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1208420Z",
+      "field": "SIGNED_APP_TEAM",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1208930Z",
+      "field": "PROFILE_TEAM",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1209300Z",
+      "field": "PROFILE_TEAM_METADATA",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1209850Z",
+      "field": "SIGNED_APP_NON_DEBUG",
+      "value": "yes"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1210220Z",
+      "field": "PROFILE_NON_DEBUG",
+      "value": "yes"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1210570Z",
+      "field": "PROFILE_TYPE",
+      "value": "app-store"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1210970Z",
+      "field": "PROFILE_EXPIRY",
+      "value": "current"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1211340Z",
+      "field": "SIGNATURE",
+      "value": "valid"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1213920Z",
+      "field": "BUNDLE_ID",
+      "value": "match"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:13:54.1214850Z",
+      "field": "PTT_BACKGROUND_MODE",
+      "value": "present"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6498110Z",
+      "field": "IPA_SHA256",
+      "value": "b6006d3ed50c2ade68b59cd224be1a884a963e281a8b8b27ebfe774ae85d65be"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6499860Z",
+      "field": "UPLOAD_REQUEST_ID",
+      "value": "not_returned"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6501010Z",
+      "field": "UPLOAD_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:14:57.639578+00:00"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6502990Z",
+      "field": "UPLOAD_TRANSPORT_RESULT",
+      "value": "accepted"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6504820Z",
+      "field": "TESTFLIGHT_UPLOAD_COMMAND",
+      "value": "accepted"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6506660Z",
+      "field": "TESTFLIGHT_PROCESSING",
+      "value": "not-yet-verified"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6507860Z",
+      "field": "IOS_VERSION",
+      "value": "0.1.0"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6508810Z",
+      "field": "IOS_BUILD",
+      "value": "17"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:57.6590280Z",
+      "field": "TEMPORARY_SIGNING_PROFILES_CLEANUP",
+      "value": "pass"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.7001910Z",
+      "field": "APP_ID_MATCH",
+      "value": "yes"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.8043210Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:14:58.794Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.8044110Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.8045090Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.8045490Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:14:58.8046230Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:15:58.9968260Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:15:58.996Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:15:58.9972970Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:15:58.9973970Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:15:58.9974630Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:15:58.9975670Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:16:59.1897250Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:16:59.187Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:16:59.1898260Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:16:59.1898530Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:16:59.1899010Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:16:59.1899480Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:17:59.4243970Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:17:59.423Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:17:59.4245510Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:17:59.4251400Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:17:59.4251860Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:17:59.4252410Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:18:59.6790310Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:18:59.675Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:18:59.6794560Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:18:59.6795890Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:18:59.6798360Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:18:59.6800410Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:19:59.8139720Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:19:59.813Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:19:59.8142130Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:19:59.8143040Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:19:59.8143900Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:19:59.8144700Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:20:59.9361930Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:20:59.934Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:20:59.9363260Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:20:59.9363570Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:20:59.9363940Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:20:59.9364330Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:22:00.1735550Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:22:00.172Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:22:00.1741260Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:22:00.1742980Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:22:00.1745000Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:22:00.1750440Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:23:00.2986700Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:23:00.298Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:23:00.2990280Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:23:00.2997450Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:23:00.3000100Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:23:00.3008060Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:24:00.5402520Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:24:00.538Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:24:00.5406160Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:24:00.5407820Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:24:00.5409380Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:24:00.5411240Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:25:00.6745700Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:25:00.674Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:25:00.6747130Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:25:00.6748080Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:25:00.6749040Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:25:00.6761620Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:26:00.8414840Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:26:00.840Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:26:00.8417410Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:26:00.8418040Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:26:00.8418730Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:26:00.8419630Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:27:01.0186160Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:27:01.015Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:27:01.0188710Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:27:01.0213470Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:27:01.0214200Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:27:01.0215570Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:28:01.1741230Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:28:01.173Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:28:01.1741810Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:28:01.1742190Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:28:01.1742610Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:28:01.1743120Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:29:01.3173190Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:29:01.315Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:29:01.3175890Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:29:01.3177080Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:29:01.3178360Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:29:01.3180050Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:30:01.4757250Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:30:01.474Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:30:01.4763530Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:30:01.4767200Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:30:01.4768800Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:30:01.4770180Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:31:01.5933570Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:31:01.592Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:31:01.5934650Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:31:01.5935270Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:31:01.5935860Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:31:01.5936700Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:32:01.7942760Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:32:01.793Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:32:01.7945120Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:32:01.7946760Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:32:01.7948640Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:32:01.7951220Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:33:01.9373620Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:33:01.935Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:33:01.9374870Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:33:01.9375580Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:33:01.9376720Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:33:01.9614850Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0508390Z",
+      "field": "POLL_TIMESTAMP_UTC",
+      "value": "2026-09-28T19:34:02.049Z"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0509710Z",
+      "field": "BUILD_17_FOUND",
+      "value": "no"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0512690Z",
+      "field": "BUILD_RESOURCE_ID",
+      "value": "none"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0513480Z",
+      "field": "BUILD_PROCESSING_STATE",
+      "value": "unknown"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0522680Z",
+      "field": "TESTFLIGHT_VISIBILITY",
+      "value": "no_server_build_record; UI_not_checked"
+    },
+    {
+      "log_timestamp": "2026-09-28T19:34:02.0535050Z",
+      "field": "DISTRIBUTION_RESULT",
+      "value": "BLOCKED; no_usable_build; no_further_retry; Apple_support_escalation"
+    }
+  ],
+  "last_values": {
+    "BUILD_17_SOURCE": "c16987116823f5f96fd7e09e2f0b02efc2c20dfc",
+    "RUNTIME_IDENTITY": "byte-identical; controller tests excluded",
+    "ARCHIVE_APP_PTT": "present",
+    "ARCHIVE_PROFILE_PTT": "present",
+    "ARCHIVE_APNS": "development",
+    "ARCHIVE_PROFILE_APNS": "development",
+    "ARCHIVE_SIGNED_APP_APP_ID": "match",
+    "ARCHIVE_PROFILE_APP_ID": "match",
+    "ARCHIVE_SIGNED_APP_TEAM": "match",
+    "ARCHIVE_PROFILE_TEAM": "match",
+    "ARCHIVE_PROFILE_TEAM_METADATA": "match",
+    "ARCHIVE_PROFILE_TYPE": "development",
+    "ARCHIVE_PROFILE_EXPIRY": "current",
+    "ARCHIVE_SIGNATURE": "valid",
+    "TEMPORARY_KEYCHAIN_CLEANUP": "pass",
+    "TEMPORARY_ARCHIVE_PROFILES_CLEANUP": "pass",
+    "SIGNED_APP_PTT_ENTITLEMENT": "present",
+    "PROFILE_PTT_ENTITLEMENT": "present",
+    "SIGNED_APP_APNS": "production",
+    "PROFILE_APNS": "production",
+    "SIGNED_APP_APP_ID": "match",
+    "PROFILE_APP_ID": "match",
+    "SIGNED_APP_TEAM": "match",
+    "PROFILE_TEAM": "match",
+    "PROFILE_TEAM_METADATA": "match",
+    "SIGNED_APP_NON_DEBUG": "yes",
+    "PROFILE_NON_DEBUG": "yes",
+    "PROFILE_TYPE": "app-store",
+    "PROFILE_EXPIRY": "current",
+    "SIGNATURE": "valid",
+    "BUNDLE_ID": "match",
+    "PTT_BACKGROUND_MODE": "present",
+    "IPA_SHA256": "b6006d3ed50c2ade68b59cd224be1a884a963e281a8b8b27ebfe774ae85d65be",
+    "UPLOAD_REQUEST_ID": "not_returned",
+    "UPLOAD_TIMESTAMP_UTC": "2026-09-28T19:14:57.639578+00:00",
+    "UPLOAD_TRANSPORT_RESULT": "accepted",
+    "TESTFLIGHT_UPLOAD_COMMAND": "accepted",
+    "TESTFLIGHT_PROCESSING": "not-yet-verified",
+    "IOS_VERSION": "0.1.0",
+    "IOS_BUILD": "17",
+    "TEMPORARY_SIGNING_PROFILES_CLEANUP": "pass",
+    "APP_ID_MATCH": "yes",
+    "POLL_TIMESTAMP_UTC": "2026-09-28T19:34:02.049Z",
+    "BUILD_17_FOUND": "no",
+    "BUILD_RESOURCE_ID": "none",
+    "BUILD_PROCESSING_STATE": "unknown",
+    "TESTFLIGHT_VISIBILITY": "no_server_build_record; UI_not_checked",
+    "DISTRIBUTION_RESULT": "BLOCKED; no_usable_build; no_further_retry; Apple_support_escalation"
+  },
+  "poll_count": 20,
+  "http_error_count": 0
+}

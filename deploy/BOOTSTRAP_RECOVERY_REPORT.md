@@ -1,3 +1,5 @@
+> Superseded for final Apple closeout by [BOOTSTRAP_RECOVERY_PM_REPORT.md](BOOTSTRAP_RECOVERY_PM_REPORT.md). The observations below are historical interim evidence.
+
 # Bootstrap recovery — in progress
 
 PHASE=PHASE_0_FEASIBILITY
