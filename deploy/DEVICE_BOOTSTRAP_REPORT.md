@@ -1,6 +1,6 @@
 # SLIME_TALK_DEVICE_BOOTSTRAP_001
 
-Observed 2026-09-28, approximately 17:50–17:54 UTC. Scope: Phase 0 Gate 0C enrollment/connectivity only.
+Observed 2026-09-28, approximately 17:50–17:57 UTC. Scope: Phase 0 Gate 0C enrollment/connectivity only.
 
 RESULT=BLOCKED
 READY_FOR_PHYSICAL_QA=no
@@ -37,8 +37,9 @@ READY_FOR_PHYSICAL_QA=no
 - Apple documents this GET endpoint and a 403 response: https://developer.apple.com/documentation/appstoreconnectapi/get-v1-apps-_id_-builduploads . The HTTP status alone does not establish the precise permission cause.
 - Diagnostic-only commit `710ab5b94563425d8f4a9694c5a31ff4b0fecf23` continues an independent build-record GET after upload-list failure. It emits allowlisted error codes and reason booleans, never raw Apple error detail. Unavailable results are null, not false zero-match claims. Legal/agreement/export-compliance indicators stop the diagnostic. Existing credentials, endpoint-scoped GET JWTs, environment protections, and no-upload behavior are preserved.
 - Validation: YAML parse, embedded JavaScript syntax, mock 403 proving independent build query plus sensitive-detail suppression, tracked-source security check, and git diff check PASS. Existing controller unit tests 12/12 PASS; those tests are not physical acceptance.
-- Pushed workflow triggered https://github.com/GurthBro0ks/slime_talk/actions/runs/36461341386 ; currently waiting for required owner review in `ios-feasibility-signing`, reviewer GurthBro0ks, admin bypass disabled. Owner approval requested; no approval or bypass performed by agent.
-- Exact 403 reason, upload record/state, build resource/processing state, and TestFlight visibility/installability remain UNVERIFIED pending the protected run. No PROCESSING-over-24-hours assertion is justified. No new signing/upload, key creation/rotation, or permission expansion. iPhone enrollment not prepared because an installable internal build has not been established.
+- Owner-reviewed diagnostic run https://github.com/GurthBro0ks/slime_talk/actions/runs/36461341386 completed at 17:54:59 UTC. Both upload-list and independent build-list GETs returned HTTP 403 with exact allowlisted code `FORBIDDEN.REQUEST_DOES_NOT_MATCH_SCOPE`. APP_ID_MATCH=true. No agreement-action indicator was detected. This establishes a token/request scope mismatch, not a build-processing state or insufficient API-key role.
+- Apple documents query matching at https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests . Follow-up commit `32bf739` includes the exact query string in each GET-only token scope. Mock validation verifies that the decoded synthetic JWT scope equals the requested path and query. No API-key permission expansion or unscoped token. Run https://github.com/GurthBro0ks/slime_talk/actions/runs/36461641716 awaits the same owner-required environment review; no agent approval/bypass.
+- 403 reason is verified as request/token scope mismatch. Upload record/state, build resource/processing state, and TestFlight visibility/installability remain UNVERIFIED pending the corrected protected run. No PROCESSING-over-24-hours assertion is justified. No new signing/upload, key creation/rotation, or permission expansion. iPhone enrollment not prepared because an installable internal build has not been established.
 
 ## Secret exposure
 
