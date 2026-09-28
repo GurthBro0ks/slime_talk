@@ -4,7 +4,7 @@ PHASE=PHASE_0_FEASIBILITY
 WORK_ORDER=SLIME_TALK_BOOTSTRAP_RECOVERY_001
 RESULT=PARTIAL
 
-Observed 2026-09-28 through 19:10 UTC. This is an interim record, not gate acceptance.
+Observed 2026-09-28 through 19:16 UTC. This is an interim record, not gate acceptance.
 
 PIXEL_APK_VERSION=0.1.0
 PIXEL_APK_BUILD=4
@@ -15,18 +15,18 @@ PIXEL_NATIVE_CELLULAR=NOT_TESTED
 PIXEL_ENROLLMENT=credential_accepted; source_uses_Android_Keystore_AES_GCM; device_storage_not_independently_inspected
 PIXEL_PUBLIC_AUTH=login_succeeded_inferred_from_media_connected; controller_session_correlation_pending
 PIXEL_STATUS=supported_by_initial_connected_window; direct_HTTP_response_not_observed; subsequent_controller_connection_loss
-PIXEL_LIVEKIT_RECEIVE_ONLY=connected; server_permission_observation_pending
+PIXEL_LIVEKIT_RECEIVE_ONLY=PASS; can_subscribe_true; can_publish_false; can_publish_data_false; zero_published_tracks
 PIXEL_MIC_ACTIVATED=no_observed_start_events; not_complete_hardware_audit
-PIXEL_AUDIO_PUBLISHED=no_observed_publication_events; server_track_check_pending
+PIXEL_AUDIO_PUBLISHED=no; zero_server_tracks_and_no_observed_publication_events
 
 BUILD_16_DISPOSITION=transport_accepted; server_build_resource_none_found; TestFlight_not_visible; processing_unknown; unusable; no_retry
 BUILD_17_SOURCE=c16987116823f5f96fd7e09e2f0b02efc2c20dfc
-BUILD_17_SIGNING=pending_required_owner_environment_review
-BUILD_17_ENTITLEMENTS=pending_signed_archive_and_export
-UPLOAD_TRANSPORT_RESULT=not_attempted
-UPLOAD_REQUEST_ID=not_applicable_upload_not_attempted
-UPLOAD_TIMESTAMP_UTC=not_applicable
-BUILD_17_FOUND=not_queried_yet
+BUILD_17_SIGNING=verification_step_passed; detailed_labels_pending_completed_log
+BUILD_17_ENTITLEMENTS=verification_step_passed; detailed_labels_pending_completed_log
+UPLOAD_TRANSPORT_RESULT=accepted_inferred_from_successful_upload_step; safe_metadata_pending_completed_log
+UPLOAD_REQUEST_ID=pending_completed_log
+UPLOAD_TIMESTAMP_UTC=pending_completed_log
+BUILD_17_FOUND=poll_in_progress
 BUILD_RESOURCE_ID=unknown
 BUILD_PROCESSING_STATE=unknown
 TESTFLIGHT_VISIBILITY=not_verified_for_build17
@@ -37,11 +37,11 @@ IPHONE_RECEIVE_ONLY_CONNECTIVITY=not_tested
 IPHONE_MIC_ACTIVATED_DURING_BOOTSTRAP=not_tested
 
 PAIRING_SECRET_EXPOSURE=no_observed
-SECRETS_AUDIT=tracked_source_check_PASS; masked_owner_image; event_names_only; private_USB_helper_not_executed_by_agent; controller_log_scan_pending
-BLOCKERS=GitHub_required_owner_review; privileged_read_only_participant_observation; Pixel_connection_loss
+SECRETS_AUDIT=tracked_source_check_PASS; masked_owner_image; event_names_only; private_USB_helper_not_executed_by_agent; controller_known_secret_scan_PASS
+BLOCKERS=Apple_build17_processing_poll_pending; exact_phone_session_identity_not_directly_exposed
 RISKS=LiveKit_reconnect_does_not_prove_controller_polling_recovery; exact_Pixel_session_identity_not_exposed_by_existing_logs
 READY_FOR_PHYSICAL_QA=no
-RECOMMENDED_NEXT=owner_review_build17_run; reconnect_Pixel_and_run_read_only_observer; finish_bounded_post_upload_poll; no_build18
+RECOMMENDED_NEXT=finish_bounded_post_upload_poll; install_iPhone_only_if_usable; no_build18
 
 ## Evidence and boundaries
 
@@ -53,3 +53,11 @@ RECOMMENDED_NEXT=owner_review_build17_run; reconnect_Pixel_and_run_read_only_obs
 - The owner image shows the public origin and a fully masked key. Do not reproduce it in committed evidence. No phone UI dump was taken by the agent.
 - `deploy/observe_bootstrap.py` performs a read-only LiveKit participant query and in-memory known-secret journal scan. It requires owner password-gated sudo; it neither restarts the service nor logs in as the Pixel. It records participant identity digests, permissions and track counts, with timing-only identity correlation explicitly labeled.
 - Production implementation, PTT and physical F1–F7 acceptance remain unauthorized.
+
+## 19:16 UTC update
+
+Owner approved signing environment. Candidate signing/verification/upload step passed; exact Apple build polling is in progress. No second dispatch or upload.
+
+Latest Pixel login/media connection at epoch-ms 1790622821750 remained free of controller/media loss events through the 19:16 inspection. Owner read-only observer at 1790622975 found one UUID participant with digest `5c0505f06195ef86`, matching the earlier observation at 1790622829: can_subscribe=true, can_publish=false, can_publish_data=false, published_track_count=0. Controller known-secret scan PASS. Earlier can_subscribe=false was an observer schema bug: LiveKit returned snake_case, while the observer initially read camelCase. Commit de2c39e fixes both spellings; synthetic variant/missing/conflicting-field tests passed. Corrected observation supersedes earlier permission values. Runtime unchanged.
+
+A single participant during the isolated Pixel join window supports timing correlation; the exact phone-issued session/UUID is not directly exposed. Continuous connected app trace supports status polling but does not independently capture each HTTP response. These evidence limits remain explicit.
