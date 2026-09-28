@@ -18,6 +18,7 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 
@@ -71,8 +72,14 @@ def participants(env):
         headers={"Authorization": "Bearer " + data.decode() + "." + signature, "Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=8) as response:
-        return len(json.load(response).get("participants", []))
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            return len(json.load(response).get("participants", []))
+    except urllib.error.HTTPError as error:
+        # LiveKit returns 404 when the room has closed after its last client.
+        if error.code == 404:
+            return 0
+        raise
 
 
 def main():
@@ -127,8 +134,11 @@ if __name__ == "__main__":
     try:
         main()
         status = "PASS"
-    except Exception:
+    except Exception as error:
         status = "FAIL"
+        checks["failure_type"] = type(error).__name__
+        if isinstance(error, urllib.error.HTTPError):
+            checks["failure_http_status"] = str(error.code)
     RESULT.write_text(json.dumps({"status": status, "checks": checks}, sort_keys=True) + "\n")
     RESULT.chmod(0o644)
     print("NUC2_ROOT_GATE=" + status)
