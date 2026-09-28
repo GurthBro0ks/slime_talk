@@ -13,6 +13,15 @@ import urllib.request
 import urllib.error
 
 
+def permission_value(permission, camel, snake):
+    values = [permission[k] for k in (camel, snake) if k in permission]
+    if not values:
+        return False if isinstance(permission, dict) and permission else 'unknown'
+    if any(type(v) is not bool for v in values) or len(set(values)) != 1:
+        return 'unknown'
+    return values[0]
+
+
 def observe():
     if os.geteuid() != 0:
         raise RuntimeError('owner_privileged_terminal_required')
@@ -52,10 +61,11 @@ def observe():
         identity = p.get('identity', '')
         result['participants'].append({
             'identity_digest': hashlib.sha256(identity.encode()).hexdigest()[:16],
+            'permission_field_format': 'snake_case' if 'can_subscribe' in permission else 'camelCase' if 'canSubscribe' in permission else 'unrecognized',
             'uuid_identity': bool(re.fullmatch(r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', identity)),
-            'can_subscribe': permission.get('canSubscribe', False),
-            'can_publish': permission.get('canPublish', False),
-            'can_publish_data': permission.get('canPublishData', False),
+            'can_subscribe': permission_value(permission, 'canSubscribe', 'can_subscribe'),
+            'can_publish': permission_value(permission, 'canPublish', 'can_publish'),
+            'can_publish_data': permission_value(permission, 'canPublishData', 'can_publish_data'),
             'published_track_count': len(p.get('tracks', [])),
         })
     logs = subprocess.check_output(['journalctl', '-u', 'slime-talk-feasibility.service', '--since', '2026-09-28 19:00:00 UTC', '--no-pager', '-o', 'cat'], text=True, stderr=subprocess.DEVNULL)
