@@ -22,7 +22,7 @@ Runtime source commit: `c16987116823f5f96fd7e09e2f0b02efc2c20dfc`.
   [protected runtime signing/upload run 16](https://github.com/GurthBro0ks/slime_talk/actions/runs/36334625784).
   Same-candidate distribution verification and TestFlight processing are pending.
   Earlier signing PASS below applies only to the prerequisite probe.
-- Controller: 11 automated tests passed. Single ownership, epochs, renewable
+- Controller: 12 automated tests passed on NUC2. Single ownership, epochs, renewable
   leases, revocation, session/token boundaries, and APNs request construction
   are implemented. Actual APNs delivery and media operation are untested.
 - Three-second local speech timeout and WAIT_FOR_RELEASE are implemented on both
@@ -32,8 +32,8 @@ Runtime source commit: `c16987116823f5f96fd7e09e2f0b02efc2c20dfc`.
 - Redacted client trace and controller timestamps are implemented. No speech
   recording. Source safety scan passed; protected runtime CI audit remains pending.
 - Deployment definitions are prepared in [deploy](deploy/README.md).
-  No NUC is selected, controller deployed, or public Funnel enabled.
-  Explicit owner approval relayed by Canonical PM is required before public exposure.
+  NUC2 and temporary public Funnel exposure are owner-approved. The controller and
+  its Funnel are still disabled pending private credentials and privileged installation.
 - Existing free LiveKit credentials previously validated in
   [credential check](https://github.com/GurthBro0ks/slime_talk/actions/runs/36254826920).
   Runtime connectivity is not yet validated.

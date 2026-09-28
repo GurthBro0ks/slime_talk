@@ -1,11 +1,12 @@
-# Feasibility deployment — NOT ENABLED
+# Feasibility deployment — NUC2 preparation, NOT ENABLED
 
-No NUC has been selected/accessed for this deployment and **no public Funnel is
-approved or enabled**. This directory only prepares deployment. Node 22+ is required.
+The owner approved NUC2 and temporary public Funnel exposure for Phase-0 testing.
+As of 2026-09-28, the controller is **not deployed**: the required LiveKit and APNs
+credentials are absent from the expected private NUC2 paths, and the deployment
+account cannot perform the required root-owned installation. Node 22+ is required.
 No packages or paid services are needed. Existing free LiveKit carries audio.
 
-Before activation, the owner/Canonical PM must identify the NUC and approve public
-Funnel exposure. Transfer server credentials privately into the host's secret files;
+Transfer the already authorized server credentials privately into the host's secret files;
 GitHub Actions secrets cannot be read back. Never paste keys into chat, Git, logs,
 command-line arguments, or downloadable artifacts.
 
@@ -17,7 +18,11 @@ Prepared layout:
 - APNs P8 and devices JSON: root:slime-talk mode 0640, parent mode 0750
 - Unit: `/etc/systemd/system/slime-talk-feasibility.service`
 
-Create pairing material locally with:
+Pairing material was generated on NUC2 in
+`/home/slimy/.local/share/slime-talk-feasibility/devices.json` (private directory
+0700, file 0600). Preserve these credentials and install that file at the prepared
+path when privileged installation is possible. On another host with no existing
+pairing file, create pairing material locally with:
 
 ```sh
 node deploy/generate-device-keys.mjs /PRIVATE/PATH/devices.json
@@ -37,17 +42,27 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now slime-talk-feasibility
 ```
 
-**Prepared Funnel command — DO NOT RUN without explicit public-exposure approval:**
+NUC2 already serves an unrelated public Funnel on HTTPS port 443, proxying to
+`127.0.0.1:8080`. Preserve that mapping. After the dedicated service starts and
+the real local authentication smoke tests pass, use a separate HTTPS port:
 
 ```sh
-tailscale funnel --bg 8787
+tailscale funnel --bg --https=8443 http://127.0.0.1:8787
 ```
 
+The intended origin is `https://slimy-nuc2.tailf64507.ts.net:8443`. Confirm the
+8443 mapping with `tailscale funnel status --json` before sharing it with clients.
 Funnel must terminate public TLS and proxy only to the local authenticated controller.
 Enter that HTTPS origin on both phones. Do not expose LiveKit/APNs keys or an admin
 API. Public authentication failures return only numeric status codes; there is no
 public health/debug/log endpoint. Check current Tailscale tailnet permissions before
-the approved activation; an ACL/account decision must be relayed to the owner.
+activation; any new ACL/account decision is outside this deployment scope.
 
-For rollback: disable Funnel using the tailnet's supported reset command and stop
-this dedicated systemd service. Do not affect other NUC services or Funnels.
+For rollback, remove only the controller's HTTPS port mapping, then stop only its
+service. Do not use `tailscale funnel reset`, which would erase the unrelated 443
+mapping:
+
+```sh
+tailscale funnel --https=8443 off
+sudo systemctl stop slime-talk-feasibility.service
+```
