@@ -1,0 +1,27 @@
+name: Controller public authentication smoke
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  unauthorized-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check public TLS and unauthorized responses from GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin='https://slimy-nuc2.tailf64507.ts.net:8443'
+          for route in status login; do
+            code=$(curl --silent --show-error --max-time 15 \
+              --output /dev/null --write-out '%{http_code}' \
+              --header 'Content-Type: application/json' \
+              --data '{}' "$origin/$route")
+            if [[ "$code" != 401 ]]; then
+              echo "PUBLIC_${route^^}_AUTH=FAIL status=$code"
+              exit 1
+            fi
+            echo "PUBLIC_${route^^}_AUTH=PASS status=401"
+          done
