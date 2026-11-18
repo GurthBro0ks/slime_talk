@@ -1,16 +1,13 @@
 name: TestFlight build 16 read-only diagnostic
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/testflight-build16-diagnostic.yml']
 permissions: {}
 concurrency:
   group: testflight-build16-diagnostic
   cancel-in-progress: false
 jobs:
   read-build16:
-    if: ${{ github.event.repository.private == false && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.private == false && github.ref == 'refs/heads/main' }}
     environment: ios-feasibility-signing
     runs-on: ubuntu-24.04
     timeout-minutes: 4
